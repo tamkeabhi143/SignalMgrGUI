@@ -1,0 +1,101 @@
+{
+    "metadata": {
+        "version": "1.0",
+        "created": "",
+        "modified": "",
+        "description": "Signal Configuration"
+    },
+    "soc_type": "Aurix",
+    "build_type": "SMP",
+    "core_info": {
+        "Aurix": {
+            "Core1": {
+                "description": "CPU1",
+                "is_autosar": true,
+                "is_master": true,
+                "is_qnx": false,
+                "is_sim": false,
+                "name": "Core1",
+                "os": "Autosar",
+                "soc_family": "Infineon"
+            },
+            "Core2": {
+                "description": "CPU2",
+                "is_autosar": true,
+                "is_master": false,
+                "is_qnx": false,
+                "is_sim": false,
+                "name": "Core2",
+                "os": "Autosar",
+                "soc_family": "Infineon"
+            }
+        },
+        "Sitara": {
+            "MCU1_0": {
+                "description": "Core1",
+                "is_autosar": true,
+                "is_master": true,
+                "is_qnx": false,
+                "is_sim": false,
+                "name": "MCU1_0",
+                "os": "Autosar",
+                "soc_family": "TI"
+            }
+        }
+    },
+    "signals": {
+        "TestData1": {
+            "Variable_Port_Name": "TestData_Var1",
+            "Memory Region": "DDR",
+            "Buffer count_IPC": 1,
+            "Type": "Concurrent",
+            "InitValue": "ZeroMemory",
+            "Notifiers": false,
+            "Source": "Aurix.Core1",
+            "Impl_Approach": "SharedMemory",
+            "GetObjRef": false,
+            "SM_Buff_Count": 3,
+            "Timeout": 10,
+            "Periodicity": 10,
+            "ASIL": "QM",
+            "Checksum": "None",
+            "DataType": "INT32",
+            "description": "New signal",
+            "is_struct": false,
+            "struct_fields": {},
+            "core_Aurix_Core1": false,
+            "core_Aurix_Core2": true
+        },
+        "Twhjda": {
+            "Variable_Port_Name": "Twhjda",
+            "Memory Region": "DDR",
+            "Buffer count_IPC": 1,
+            "Type": "Concurrent",
+            "InitValue": "ZeroMemory",
+            "Notifiers": false,
+            "Source": "Aurix.Core2",
+            "Impl_Approach": "SharedMemory",
+            "GetObjRef": false,
+            "SM_Buff_Count": 1,
+            "Timeout": 10,
+            "Periodicity": 10,
+            "ASIL": "QM",
+            "Checksum": "Additive",
+            "DataType": "INT32",
+            "description": "New signal",
+            "is_struct": false,
+            "struct_fields": {},
+            "core_Aurix_Core1": true,
+            "core_Aurix_Core2": false
+        }
+    },
+    "soc_list": [
+        "Aurix",
+        "Sitara"
+    ],
+    "build_list": [
+        "SMP",
+        "MultiImage"
+    ],
+    "export_sheet_name": "Config"
+}
