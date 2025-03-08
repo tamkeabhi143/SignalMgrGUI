@@ -1,0 +1,18 @@
+{
+    "app_name": "SignalMgrGUI",
+    "version": "1.0.0",
+    "description": "Signal Manager GUI Tool for managing signal configurations",
+    "author": "Signal Manager Development Team",
+    "windows_icon": "app_icon.ico",
+    "linux_icon": "app_icon.png",
+    "add_data": [
+        {
+            "src": "../modules",
+            "dest": "modules"
+        },
+        {
+            "src": "../utils",
+            "dest": "utils"
+        }
+    ]
+}

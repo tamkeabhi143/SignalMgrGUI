@@ -167,11 +167,77 @@ class ConfigManagerDialog(QDialog):
         layout.addRow("Description:", self.description_edit)
 
     def load_config(self):
-        # Load SOC list
-        soc_list = self.config_data.get("soc_list", ["ARM", "x86", "RISC-V", "PowerPC", "MIPS"])
+        """Load existing configuration into the UI"""
+        # Clear existing data first
+        self.core_tree.clear()
+        self.soc_list.clear()
+        self.current_soc_combo.clear()
+        self.build_type_list.clear()
+        self.current_build_combo.clear()
+        
+        # Populate the tree with core information
+        core_info = self.config_data.get("core_info", {})
+        
+        for soc_name, cores in core_info.items():
+            # Create SOC item properly as a tree widget item
+            soc_item = QTreeWidgetItem(self.core_tree)
+            soc_item.setText(0, soc_name)
+            
+            # Add this SOC to the SOC list if it's not there
+            if self.soc_list.findItems(soc_name, Qt.MatchExactly) == []:
+                self.soc_list.addItem(soc_name)
+                self.current_soc_combo.addItem(soc_name)
+            
+            for core_name, core_desc in cores.items():
+                # Create core item properly as a tree widget item
+                core_item = QTreeWidgetItem(soc_item)
+                core_item.setText(0, core_name)
+                
+                # Handle core_desc depending on its type
+                if isinstance(core_desc, dict):
+                    # Create a summary string for display
+                    summary = []
+                    if core_desc.get("is_master", False):
+                        summary.append("Master")
+                        # Also set the Master/Slave column
+                        core_item.setText(2, "Master")
+                    else:
+                        summary.append("Slave")
+                        # Also set the Master/Slave column
+                        core_item.setText(2, "Slave")
+                    
+                    # Add OS information
+                    os_type = core_desc.get("os", "Unknown")
+                    summary.append(f"OS: {os_type}")
+                    # Set the OS column
+                    core_item.setText(3, os_type)
+                    
+                    # Set the SOC family if available
+                    soc_family = core_desc.get("soc_family", "Unknown")
+                    core_item.setText(4, soc_family)
+                    
+                    # Set the description column
+                    core_item.setText(1, core_desc.get("description", ", ".join(summary)))
+                    
+                    # Store the full dictionary in the item's data for retrieval later
+                    core_item.setData(0, Qt.UserRole, core_desc)
+                else:
+                    # If it's a string or other simple type, just convert to string and show as description
+                    core_item.setText(1, str(core_desc))
+        
+        # Load SOC list - ensure unique entries
+        soc_list = self.config_data.get("soc_list", ["Windows"])
         for soc in soc_list:
-            self.soc_list.addItem(soc)
-            self.current_soc_combo.addItem(soc)
+            # Check if SOC already exists in the list
+            if self.soc_list.findItems(soc, Qt.MatchExactly) == []:
+                self.soc_list.addItem(soc)
+                self.current_soc_combo.addItem(soc)
+    
+        # Add SOCs from core_info to soc_list if they're not already there
+        for soc_name in core_info.keys():
+            if self.soc_list.findItems(soc_name, Qt.MatchExactly) == []:
+                self.soc_list.addItem(soc_name)
+                self.current_soc_combo.addItem(soc_name)
         
         # Set current SOC selection
         current_soc = self.config_data.get("soc_type", "")
@@ -180,7 +246,7 @@ class ConfigManagerDialog(QDialog):
             self.current_soc_combo.setCurrentIndex(index)
         
         # Load build type list
-        build_types = self.config_data.get("build_list", ["Debug", "Release", "Test", "Production"])
+        build_types = self.config_data.get("build_list", ["SMP","MultiImage","Simulation"])
         for build_type in build_types:
             self.build_type_list.addItem(build_type)
             self.current_build_combo.addItem(build_type)
@@ -190,13 +256,6 @@ class ConfigManagerDialog(QDialog):
         index = self.current_build_combo.findText(current_build)
         if index >= 0:
             self.current_build_combo.setCurrentIndex(index)
-        
-        # Load core info
-        core_info = self.config_data.get("core_info", {})
-        for soc_name, cores in core_info.items():
-            soc_item = QTreeWidgetItem(self.core_tree, [soc_name, "SOC"])
-            for core_name, core_desc in cores.items():
-                QTreeWidgetItem(soc_item, [core_name, core_desc])
         
         # Expand all items
         self.core_tree.expandAll()
@@ -212,10 +271,18 @@ class ConfigManagerDialog(QDialog):
     def get_updated_config(self):
         # Update config with current values
         
-        # Update SOC list
+        # Update SOC list - make sure we include SOCs from core_info
         soc_list = []
         for i in range(self.soc_list.count()):
             soc_list.append(self.soc_list.item(i).text())
+        
+        # Also include any SOCs from the core_info tree that might not be in the SOC list
+        root = self.core_tree.invisibleRootItem()
+        for i in range(root.childCount()):
+            soc_name = root.child(i).text(0)
+            if soc_name not in soc_list:
+                soc_list.append(soc_name)
+            
         self.config_data["soc_list"] = soc_list
         
         # Update current SOC
@@ -249,7 +316,7 @@ class ConfigManagerDialog(QDialog):
                     core_props = {
                         "name": core_name,
                         "description": core_item.text(1),
-                        "is_master": core_item.text(2) == "Master",
+                        "is_master": core_item.text(2) == "Master" if len(core_item.text(2)) > 0 else False,
                         "is_qnx": False,
                         "is_autosar": False,
                         "is_sim": False,
@@ -286,9 +353,23 @@ class ConfigManagerDialog(QDialog):
                     QMessageBox.warning(self, "Warning", f"SOC '{soc_name}' already exists")
                     return
             
-            # Add to list and combo
+            # Add to SOC list and combo
             self.soc_list.addItem(soc_name)
             self.current_soc_combo.addItem(soc_name)
+        
+            # Also add to Core Info tree if not already there
+            root = self.core_tree.invisibleRootItem()
+            exists = False
+            for i in range(root.childCount()):
+                if root.child(i).text(0) == soc_name:
+                    exists = True
+                    break
+                
+            if not exists:
+                # Add new SOC node to Core Info tree
+                soc_item = QTreeWidgetItem([soc_name, "SOC"])
+                self.core_tree.addTopLevelItem(soc_item)
+                self.core_tree.expandItem(soc_item)
     
     def remove_soc(self):
         selected_items = self.soc_list.selectedItems()
@@ -298,13 +379,38 @@ class ConfigManagerDialog(QDialog):
         
         for item in selected_items:
             soc_name = item.text()
-            # Remove from list
+            
+            # Check if this SOC has cores in the Core Info tree
+            root = self.core_tree.invisibleRootItem()
+            has_cores = False
+            for i in range(root.childCount()):
+                if root.child(i).text(0) == soc_name and root.child(i).childCount() > 0:
+                    has_cores = True
+                    break
+        
+            if has_cores:
+                reply = QMessageBox.question(
+                    self, 
+                    "Confirm SOC Removal",
+                    f"SOC '{soc_name}' has configured cores. Are you sure you want to remove it?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                if reply != QMessageBox.Yes:
+                    continue
+                
+            # Remove from SOC list
             self.soc_list.takeItem(self.soc_list.row(item))
             
             # Remove from combo
             index = self.current_soc_combo.findText(soc_name)
             if index >= 0:
                 self.current_soc_combo.removeItem(index)
+            
+            # Remove from Core Info tree
+            for i in range(root.childCount()):
+                if root.child(i).text(0) == soc_name:
+                    root.takeChild(i)
+                    break
     
     # Build Type Tab Methods
     def add_build_type(self):
@@ -347,10 +453,15 @@ class ConfigManagerDialog(QDialog):
                     QMessageBox.warning(self, "Warning", f"SOC '{soc_name}' already exists")
                     return
             
-            # Add new SOC node
+            # Add new SOC node to Core Info tree
             soc_item = QTreeWidgetItem([soc_name, "SOC"])
             self.core_tree.addTopLevelItem(soc_item)
             self.core_tree.expandItem(soc_item)
+        
+            # Also add to SOC list if not already there
+            if self.soc_list.findItems(soc_name, Qt.MatchExactly) == []:
+                self.soc_list.addItem(soc_name)
+                self.current_soc_combo.addItem(soc_name)
     
     def add_core_node(self):
         selected_items = self.core_tree.selectedItems()

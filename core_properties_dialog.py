@@ -1,17 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from PyQt5 import QtCore, QtGui, QtWidgets
-from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, 
-                            QPushButton, QCheckBox, QComboBox, QGroupBox, QMessageBox,
-                            QFormLayout)
-from PyQt5.QtCore import Qt
+from PyQt5 import QtWidgets
+from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
+                            QLineEdit, QComboBox, QCheckBox, QPushButton, QFormLayout)
 
 class CorePropertiesDialog(QDialog):
+    """Dialog for configuring core properties"""
     def __init__(self, parent=None, properties=None):
         super(CorePropertiesDialog, self).__init__(parent)
+        self.setWindowTitle("Core Properties")
+        self.resize(400, 300)
         
-        # Default properties if not provided
+        # Initialize with default or given properties
         self.properties = properties or {
             "name": "",
             "description": "",
@@ -19,165 +20,169 @@ class CorePropertiesDialog(QDialog):
             "is_qnx": False,
             "is_autosar": False,
             "is_sim": False,
-            "os": "Autosar",
-            "soc_family": "TI"
+            "os": "Unknown",
+            "soc_family": "Unknown"
         }
         
         self.setup_ui()
         self.load_properties()
-        self.connect_signals()
         
     def setup_ui(self):
-        self.setWindowTitle("Core Properties")
-        self.resize(400, 450)
+        layout = QFormLayout(self)
         
-        # Main layout
-        layout = QVBoxLayout(self)
+        # Core name
+        self.name_edit = QLineEdit(self.properties.get("name", ""))
+        layout.addRow("Core Name:", self.name_edit)
         
-        # Basic info group
-        basic_group = QGroupBox("Basic Information")
-        basic_layout = QFormLayout()
+        # Description
+        self.description_edit = QLineEdit(self.properties.get("description", ""))
+        layout.addRow("Description:", self.description_edit)
         
-        self.name_edit = QLineEdit()
-        basic_layout.addRow("Core Name:", self.name_edit)
+        # Master/Slave selection
+        self.master_checkbox = QCheckBox("Is Master Core")
+        self.master_checkbox.setChecked(self.properties.get("is_master", False))
+        layout.addRow("", self.master_checkbox)
         
-        self.description_edit = QLineEdit()
-        basic_layout.addRow("Description:", self.description_edit)
-        
-        basic_group.setLayout(basic_layout)
-        layout.addWidget(basic_group)
-        
-        # Core type group
-        type_group = QGroupBox("Core Type")
-        type_layout = QFormLayout()
-        
-        self.master_slave_box = QCheckBox("Master Core")
-        type_layout.addRow("Master/Slave:", self.master_slave_box)
-        
-        # QNX/Autosar/Sim exclusive options
-        self.qnx_box = QCheckBox("QNX Core")
-        type_layout.addRow("Is QNX Core:", self.qnx_box)
-        
-        self.autosar_box = QCheckBox("Autosar Core")
-        type_layout.addRow("Is Autosar Core:", self.autosar_box)
-        
-        self.sim_box = QCheckBox("Simulation Core")
-        type_layout.addRow("Is Sim Core:", self.sim_box)
-        
-        type_group.setLayout(type_layout)
-        layout.addWidget(type_group)
-        
-        # System info group
-        system_group = QGroupBox("System Information")
-        system_layout = QFormLayout()
-        
+        # OS Type dropdown with "Other" option
         self.os_combo = QComboBox()
-        self.os_combo.setEditable(True)
-        self.os_combo.addItems(["Autosar", "QNX", "FreeRTOS", "SafeRTOS", "TI-RTOS", "Windows"])
-        system_layout.addRow("Operating System:", self.os_combo)
+        os_options = ["Unknown", "Linux", "QNX", "AUTOSAR", "FreeRTOS", "Windows", "Other"]
+        self.os_combo.addItems(os_options)
         
+        # Custom OS input field (initially hidden)
+        self.custom_os_edit = QLineEdit()
+        self.custom_os_edit.setPlaceholderText("Enter custom OS type")
+        self.custom_os_edit.hide()
+        
+        # Set current OS or select Other
+        current_os = self.properties.get("os", "Unknown")
+        index = self.os_combo.findText(current_os)
+        if index >= 0:
+            self.os_combo.setCurrentIndex(index)
+        else:
+            # If current OS is not in the list, select "Other" and show custom field
+            other_index = self.os_combo.findText("Other")
+            self.os_combo.setCurrentIndex(other_index)
+            self.custom_os_edit.setText(current_os)
+            self.custom_os_edit.show()
+            
+        # Connect OS dropdown to show/hide custom field
+        self.os_combo.currentTextChanged.connect(self.on_os_changed)
+        
+        layout.addRow("OS Type:", self.os_combo)
+        layout.addRow("", self.custom_os_edit)
+        
+        # SOC Family dropdown with "Other" option
         self.soc_family_combo = QComboBox()
-        self.soc_family_combo.setEditable(True)
-        self.soc_family_combo.addItems(["TI", "Infineon", "Qualcomm", "NVIDIA"])
-        system_layout.addRow("SOC Family:", self.soc_family_combo)
+        soc_options = ["Unknown", "TI", "Tricore" ,"NXP", "Intel", "AMD", "Raspberry Pi", "Other"]
+        self.soc_family_combo.addItems(soc_options)
         
-        system_group.setLayout(system_layout)
-        layout.addWidget(system_group)
+        # Custom SOC Family input field (initially hidden)
+        self.custom_soc_family_edit = QLineEdit()
+        self.custom_soc_family_edit.setPlaceholderText("Enter custom SOC family")
+        self.custom_soc_family_edit.hide()
         
-        # Buttons
+        # Set current SOC family or select Other
+        current_family = self.properties.get("soc_family", "Unknown")
+        index = self.soc_family_combo.findText(current_family)
+        if index >= 0:
+            self.soc_family_combo.setCurrentIndex(index)
+        else:
+            # If current SOC family is not in the list, select "Other" and show custom field
+            other_index = self.soc_family_combo.findText("Other")
+            self.soc_family_combo.setCurrentIndex(other_index)
+            self.custom_soc_family_edit.setText(current_family)
+            self.custom_soc_family_edit.show()
+            
+        # Connect SOC family dropdown to show/hide custom field
+        self.soc_family_combo.currentTextChanged.connect(self.on_soc_family_changed)
+        
+        layout.addRow("SOC Family:", self.soc_family_combo)
+        layout.addRow("", self.custom_soc_family_edit)
+        
+        # Additional checkboxes
+        self.qnx_checkbox = QCheckBox("Is QNX Core")
+        self.qnx_checkbox.setChecked(self.properties.get("is_qnx", False))
+        layout.addRow("", self.qnx_checkbox)
+        
+        self.autosar_checkbox = QCheckBox("Is Autosar Compliant")
+        self.autosar_checkbox.setChecked(self.properties.get("is_autosar", False))
+        layout.addRow("", self.autosar_checkbox)
+        
+        self.sim_checkbox = QCheckBox("Is Simulation Core")
+        self.sim_checkbox.setChecked(self.properties.get("is_sim", False))
+        layout.addRow("", self.sim_checkbox)
+        
+        # Button layout
         button_layout = QHBoxLayout()
         self.ok_button = QPushButton("OK")
         self.cancel_button = QPushButton("Cancel")
         button_layout.addWidget(self.ok_button)
         button_layout.addWidget(self.cancel_button)
-        layout.addLayout(button_layout)
+        
+        layout.addRow("", button_layout)
         
         # Connect buttons
         self.ok_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
-        
+    
+    def on_os_changed(self, text):
+        """Show or hide the custom OS input field based on selection"""
+        if text == "Other":
+            self.custom_os_edit.show()
+        else:
+            self.custom_os_edit.hide()
+            
+    def on_soc_family_changed(self, text):
+        """Show or hide the custom SOC family input field based on selection"""
+        if text == "Other":
+            self.custom_soc_family_edit.show()
+        else:
+            self.custom_soc_family_edit.hide()
+    
     def load_properties(self):
-        # Set existing values
+        # Load properties into UI elements
         self.name_edit.setText(self.properties["name"])
         self.description_edit.setText(self.properties["description"])
-        self.master_slave_box.setChecked(self.properties["is_master"])
-        self.qnx_box.setChecked(self.properties["is_qnx"])
-        self.autosar_box.setChecked(self.properties["is_autosar"])
-        self.sim_box.setChecked(self.properties["is_sim"])
+        self.master_checkbox.setChecked(self.properties["is_master"])
+        self.qnx_checkbox.setChecked(self.properties["is_qnx"])
+        self.autosar_checkbox.setChecked(self.properties["is_autosar"])
+        self.sim_checkbox.setChecked(self.properties["is_sim"])
         
-        # Set OS
-        index = self.os_combo.findText(self.properties["os"])
+        # Set OS type
+        os_type = self.properties["os"]
+        index = self.os_combo.findText(os_type)
         if index >= 0:
             self.os_combo.setCurrentIndex(index)
         else:
-            self.os_combo.setCurrentText(self.properties["os"])
-            
-        # Set SOC Family
-        index = self.soc_family_combo.findText(self.properties["soc_family"])
+            self.os_combo.setCurrentText(os_type)
+        
+        # Set SOC family
+        soc_family = self.properties["soc_family"]
+        index = self.soc_family_combo.findText(soc_family)
         if index >= 0:
             self.soc_family_combo.setCurrentIndex(index)
         else:
-            self.soc_family_combo.setCurrentText(self.properties["soc_family"])
-            
-        # Apply initial state based on selections
-        self.update_checkboxes()
-        
-    def connect_signals(self):
-        # Connect the checkboxes to update each other
-        self.qnx_box.stateChanged.connect(self.update_checkboxes)
-        self.autosar_box.stateChanged.connect(self.update_checkboxes)
-        self.sim_box.stateChanged.connect(self.update_checkboxes)
-        
-        # Update OS combobox when checkbox changes
-        self.qnx_box.stateChanged.connect(self.update_os_combo)
-        self.autosar_box.stateChanged.connect(self.update_os_combo)
-        
-    def update_checkboxes(self):
-        # Handle dependencies between checkboxes
-        if self.sender() == self.qnx_box and self.qnx_box.isChecked():
-            self.autosar_box.setChecked(False)
-            self.autosar_box.setEnabled(not self.qnx_box.isChecked())
-        
-        if self.sender() == self.autosar_box and self.autosar_box.isChecked():
-            self.qnx_box.setChecked(False)
-            self.qnx_box.setEnabled(not self.autosar_box.isChecked())
-        
-        if self.sender() == self.sim_box and self.sim_box.isChecked():
-            self.qnx_box.setChecked(False)
-            self.autosar_box.setChecked(False)
-            self.qnx_box.setEnabled(not self.sim_box.isChecked())
-            self.autosar_box.setEnabled(not self.sim_box.isChecked())
-        
-        # Re-enable if Sim is unchecked
-        if self.sender() == self.sim_box and not self.sim_box.isChecked():
-            self.qnx_box.setEnabled(True)
-            self.autosar_box.setEnabled(True)
-            
-    def update_os_combo(self):
-        # Update OS combobox selection based on core type
-        if self.sender() == self.qnx_box and self.qnx_box.isChecked():
-            self.os_combo.setCurrentText("QNX")
-        
-        if self.sender() == self.autosar_box and self.autosar_box.isChecked():
-            self.os_combo.setCurrentText("Autosar")
+            self.soc_family_combo.setCurrentText(soc_family)
     
     def get_properties(self):
-        # Gather all properties and return as dict
+        """Get the configured properties"""
+        # Get OS value - use custom field if "Other" is selected
+        os_value = self.os_combo.currentText()
+        if os_value == "Other":
+            os_value = self.custom_os_edit.text()
+        
+        # Get SOC family value - use custom field if "Other" is selected
+        soc_family = self.soc_family_combo.currentText()
+        if soc_family == "Other":
+            soc_family = self.custom_soc_family_edit.text()
+        
         return {
             "name": self.name_edit.text(),
             "description": self.description_edit.text(),
-            "is_master": self.master_slave_box.isChecked(),
-            "is_qnx": self.qnx_box.isChecked(),
-            "is_autosar": self.autosar_box.isChecked(),
-            "is_sim": self.sim_box.isChecked(),
-            "os": self.os_combo.currentText(),
-            "soc_family": self.soc_family_combo.currentText()
+            "is_master": self.master_checkbox.isChecked(),
+            "is_qnx": self.qnx_checkbox.isChecked(),
+            "is_autosar": self.autosar_checkbox.isChecked(),
+            "is_sim": self.sim_checkbox.isChecked(),
+            "os": os_value,
+            "soc_family": soc_family
         }
-        
-    def accept(self):
-        # Validate before accepting
-        if not self.name_edit.text():
-            QMessageBox.warning(self, "Validation Error", "Core name cannot be empty")
-            return
-        
-        super().accept()

@@ -1,16 +1,24 @@
 {
     "metadata": {
-        "version": "1.0",
-        "created": "",
-        "modified": "",
-        "description": "Signal Configuration"
+        "version": "1.1",
+        "date": "2025-03-07",
+        "editor": "Abhijit Tamke",
+        "description": ""
     },
     "soc_type": "Aurix",
     "build_type": "SMP",
+    "soc_list": [
+        "Aurix",
+        "Sitara",
+        "Windows"
+    ],
+    "build_list": [
+        "SMP"
+    ],
     "core_info": {
         "Aurix": {
             "Core1": {
-                "description": "CPU1",
+                "description": "",
                 "is_autosar": true,
                 "is_master": true,
                 "is_qnx": false,
@@ -20,7 +28,7 @@
                 "soc_family": "Infineon"
             },
             "Core2": {
-                "description": "CPU2",
+                "description": "",
                 "is_autosar": true,
                 "is_master": false,
                 "is_qnx": false,
@@ -32,13 +40,43 @@
         },
         "Sitara": {
             "MCU1_0": {
-                "description": "Core1",
+                "description": "",
                 "is_autosar": true,
                 "is_master": true,
                 "is_qnx": false,
                 "is_sim": false,
                 "name": "MCU1_0",
                 "os": "Autosar",
+                "soc_family": "TI"
+            },
+            "MCU2_0": {
+                "description": "",
+                "is_autosar": false,
+                "is_master": false,
+                "is_qnx": false,
+                "is_sim": false,
+                "name": "MCU2_0",
+                "os": "FreeRTOS",
+                "soc_family": "TI"
+            },
+            "MCU2_1": {
+                "description": "",
+                "is_autosar": false,
+                "is_master": false,
+                "is_qnx": false,
+                "is_sim": false,
+                "name": "MCU2_1",
+                "os": "FreeRTOS",
+                "soc_family": "TI"
+            },
+            "MCU3_0": {
+                "description": "",
+                "is_autosar": false,
+                "is_master": false,
+                "is_qnx": false,
+                "is_sim": false,
+                "name": "MCU3_0",
+                "os": "FreeRTOS",
                 "soc_family": "TI"
             }
         }
@@ -60,11 +98,12 @@
             "ASIL": "QM",
             "Checksum": "None",
             "DataType": "INT32",
-            "description": "New signal",
+            "description": "Imported signal",
             "is_struct": false,
             "struct_fields": {},
             "core_Aurix_Core1": false,
-            "core_Aurix_Core2": true
+            "core_Aurix_Core2": true,
+            "core_Sitara_MCU1_0": false
         },
         "Twhjda": {
             "Variable_Port_Name": "Twhjda",
@@ -82,20 +121,13 @@
             "ASIL": "QM",
             "Checksum": "Additive",
             "DataType": "INT32",
-            "description": "New signal",
+            "description": "Imported signal",
             "is_struct": false,
             "struct_fields": {},
             "core_Aurix_Core1": true,
-            "core_Aurix_Core2": false
+            "core_Aurix_Core2": false,
+            "core_Sitara_MCU1_0": false
         }
     },
-    "soc_list": [
-        "Aurix",
-        "Sitara"
-    ],
-    "build_list": [
-        "SMP",
-        "MultiImage"
-    ],
     "export_sheet_name": "Config"
 }

@@ -2,29 +2,31 @@
 # -*- coding: utf-8 -*-
 
 from PyQt5 import QtWidgets
-from PyQt5.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton, QComboBox, QFormLayout
+from PyQt5.QtWidgets import QDialog, QFormLayout, QLineEdit, QComboBox, QDialogButtonBox, QVBoxLayout
 
 class StructFieldDialog(QDialog):
-    """Dialog for adding or editing a structure field"""
+    """Dialog for adding/editing structure fields"""
     def __init__(self, parent=None, field_name="", field_type="INT32", field_description=""):
         super(StructFieldDialog, self).__init__(parent)
-        
-        self.setWindowTitle("Structure Field")
-        self.resize(400, 200)
         
         self.field_name = field_name
         self.field_type = field_type
         self.field_description = field_description
         
         self.setup_ui()
-        self.load_data()
+        self.load_field_data()
         
     def setup_ui(self):
-        layout = QFormLayout(self)
+        self.setWindowTitle("Structure Field")
+        self.resize(400, 200)
+        
+        # Create layout
+        layout = QVBoxLayout(self)
+        form_layout = QFormLayout()
         
         # Field name
         self.name_edit = QLineEdit()
-        layout.addRow("Field Name:", self.name_edit)
+        form_layout.addRow("Field Name:", self.name_edit)
         
         # Field type
         self.type_combo = QComboBox()
@@ -32,28 +34,25 @@ class StructFieldDialog(QDialog):
         self.type_combo.addItems([
             "INT8", "UINT8", "INT16", "UINT16", "INT32", "UINT32", 
             "INT64", "UINT64", "FLOAT32", "FLOAT64", "BOOLEAN", "CHAR", 
-            "STRING", "STRUCT"  # Support for nested structures
+            "STRING", "ENUM", "ARRAY"
         ])
-        layout.addRow("Data Type:", self.type_combo)
+        form_layout.addRow("Field Type:", self.type_combo)
         
-        # Field description
+        # Description
         self.description_edit = QLineEdit()
-        layout.addRow("Description:", self.description_edit)
+        form_layout.addRow("Description:", self.description_edit)
         
-        # Buttons
-        button_layout = QHBoxLayout()
-        self.ok_button = QPushButton("OK")
-        self.cancel_button = QPushButton("Cancel")
-        button_layout.addWidget(self.ok_button)
-        button_layout.addWidget(self.cancel_button)
-        layout.addRow("", button_layout)
+        # Add form layout to main layout
+        layout.addLayout(form_layout)
         
-        # Connect buttons
-        self.ok_button.clicked.connect(self.validate_and_accept)
-        self.cancel_button.clicked.connect(self.reject)
-        
-    def load_data(self):
-        # Fill the form with existing data if editing
+        # Add buttons
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        button_box.accepted.connect(self.accept)
+        button_box.rejected.connect(self.reject)
+        layout.addWidget(button_box)
+    
+    def load_field_data(self):
+        # Load field data into UI elements
         self.name_edit.setText(self.field_name)
         
         # Set field type
@@ -62,19 +61,11 @@ class StructFieldDialog(QDialog):
             self.type_combo.setCurrentIndex(index)
         else:
             self.type_combo.setCurrentText(self.field_type)
-            
+        
         self.description_edit.setText(self.field_description)
     
-    def validate_and_accept(self):
-        # Validate form data
-        if not self.name_edit.text():
-            QtWidgets.QMessageBox.warning(self, "Validation Error", "Field name cannot be empty")
-            return
-            
-        self.accept()
-    
     def get_field_data(self):
-        # Return the field data as a tuple
+        """Return the field data as a tuple (name, type, description)"""
         return (
             self.name_edit.text(),
             self.type_combo.currentText(),
