@@ -3,16 +3,23 @@
 
 import os
 import sys
+
+# Add the parent directory to the path so modules can be found
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+if parent_dir not in sys.path:
+    sys.path.insert(0, parent_dir)
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtWidgets import QMessageBox
 
-from SignalMgrGUI import Ui_MainWindow
+from Cfg.SignalMgrGUI import Ui_MainWindow
 
 # Import the new modules
-from modules.file_operations import FileOperations
-from modules.signal_operations import SignalOperations
-from modules.code_generation import CodeGeneration
-from modules.ui_helpers import UIHelpers
+from Modules.FileOperations import FileOperations
+from Modules.SignalOperations import SignalOperations
+from Modules.CodeGeneration import CodeGeneration
+from Modules.UIHelpers import UIHelpers
 
 class SignalMgrApp(QtWidgets.QMainWindow):
     def __init__(self):
@@ -79,7 +86,7 @@ class SignalMgrApp(QtWidgets.QMainWindow):
 
     def setup_connections(self):
         # Connect File menu actions
-        self.ui.actionOpen.triggered.connect(self.file_ops.open_file)
+        self.ui.actionOpen.triggered.connect(self.open_file_wrapper)
         self.ui.actionSave.triggered.connect(self.file_ops.save_file)
         self.ui.actionSave_As.triggered.connect(self.file_ops.save_file_as)
         self.ui.actionCreate.triggered.connect(self.file_ops.create_new_file)
@@ -129,6 +136,11 @@ class SignalMgrApp(QtWidgets.QMainWindow):
         # Additional change: Set tab order to improve usability
         self.ui.VersionNumber.setTabOrder(self.ui.VersionNumber, self.ui.VersionDate)
         self.ui.VersionDate.setTabOrder(self.ui.VersionDate, self.ui.EditorName)
+
+    # Add wrapper methods to handle menu actions that need special parameter handling
+    def open_file_wrapper(self):
+        """Wrapper for open_file to handle the menu action"""
+        self.file_ops.open_file()
 
     # Help functions
     def show_tool_usage(self):

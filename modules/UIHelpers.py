@@ -13,9 +13,27 @@ class UIHelpers(QObject):
         self.signal_tree = None
         # Store a deep copy of signals data for version comparison
         self.original_signals_data = None
+        # Default values for version info
+        self.default_version_info = {
+            "version": "1.0",
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "editor": "",
+            "description": "Signal Configuration"
+        }
+        # Flag to track if we're using default values or loaded values
+        self.using_default_values = True
+        # Flag to track if app just started or file was closed
+        self.first_run_or_closed = True
         
-    def initialize_version_fields(self):
-        """Initialize version fields with default values and add validation"""
+    def initialize_version_fields(self, skip_validation=False):
+        """Initialize version fields with metadata values or defaults
+        
+        Args:
+            skip_validation: If True, will not mark file as modified during initialization
+        """
+        # Remember the original modified state
+        original_modified = self.app.modified
+        
         # Initialize metadata if not exists
         if "metadata" not in self.app.signals_data:
             self.app.signals_data["metadata"] = {}
@@ -27,16 +45,31 @@ class UIHelpers(QObject):
         import copy
         self.original_signals_data = copy.deepcopy(self.app.signals_data)
         
-        # Set version from metadata or default to 1.0
-        version_str = metadata.get("version", "1.0")
-        try:
-            # Try to convert to float for validation
-            version_float = float(version_str)
-            # Format with one decimal point
-            version_str = f"{version_float:.1f}"
-        except (ValueError, TypeError):
-            version_str = "1.0"
+        # Check if metadata has values or we should use defaults
+        metadata_empty = (
+            not metadata.get("version") or 
+            not metadata.get("date") or 
+            not metadata.get("editor")
+        )
         
+        # Only set using_default_values to True if metadata is empty AND this is first run or file was closed
+        # For loaded files or imported data, we should use the values from the file
+        if metadata_empty and self.first_run_or_closed:
+            self.using_default_values = True
+        else:
+            # We're using values from a file or imported data
+            self.using_default_values = False
+        
+        # For loaded or imported data (not first run/closed file), preserve values without validation
+        if not self.using_default_values:
+            # Get version from metadata as-is without validation
+            version_str = metadata.get("version", "")
+            if not version_str:  # Only if truly empty, use default
+                version_str = self.default_version_info["version"]
+        else:
+            # Using default values (first run or closed file)
+            version_str = self.default_version_info["version"]
+            
         # Set version in UI - assuming VersionNumber has been changed to QLineEdit in the UI
         if isinstance(self.app.ui.VersionNumber, QtWidgets.QLineEdit):
             self.app.ui.VersionNumber.setText(version_str)
@@ -46,58 +79,94 @@ class UIHelpers(QObject):
                 version_int = int(float(version_str))
                 self.app.ui.VersionNumber.setValue(version_int)
             except (ValueError, TypeError):
-                self.app.ui.VersionNumber.setValue(1)
+                # For non-default values, keep as is to avoid overwriting loaded data
+                # Only set a default for first run/closed
+                if self.using_default_values:
+                    self.app.ui.VersionNumber.setValue(1)
         
-        # Set date from metadata or current date
-        date_str = metadata.get("date", "")
-        if date_str:
-            try:
-                # Parse the date string into a QDate
-                date_parts = date_str.split("-")
-                if len(date_parts) == 3:
-                    year, month, day = map(int, date_parts)
-                    qdate = QtCore.QDate(year, month, day)
-                    
-                    # Only use the date from metadata if it's valid
-                    if qdate.isValid():
-                        self.app.ui.VersionDate.setDate(qdate)
-                    else:
-                        self.app.ui.VersionDate.setDate(current_date)
-                else:
-                    self.app.ui.VersionDate.setDate(QtCore.QDate.currentDate())
-            except Exception as e:
-                print(f"Error parsing date: {e}")
-                self.app.ui.VersionDate.setDate(QtCore.QDate.currentDate())
-        else:
-            # For new configuration, set to current date
+        # Handle date values
+        if self.using_default_values:
+            # Using default values - set current date
             self.app.ui.VersionDate.setDate(QtCore.QDate.currentDate())
+        else:
+            # Using file/imported values
+            date_str = metadata.get("date", "")
+            if date_str:
+                try:
+                    # Parse the date string into a QDate
+                    date_parts = date_str.split("-")
+                    if len(date_parts) == 3:
+                        year, month, day = map(int, date_parts)
+                        qdate = QtCore.QDate(year, month, day)
+                        
+                        # Only use the date from metadata if it's valid
+                        if qdate.isValid():
+                            self.app.ui.VersionDate.setDate(qdate)
+                        else:
+                            # Invalid date in file, use current date
+                            self.app.ui.VersionDate.setDate(QtCore.QDate.currentDate())
+                    else:
+                        # Invalid date format, use current date
+                        self.app.ui.VersionDate.setDate(QtCore.QDate.currentDate())
+                except Exception as e:
+                    print(f"Error parsing date: {e}")
+                    # Error parsing date, use current date
+                    self.app.ui.VersionDate.setDate(QtCore.QDate.currentDate())
+            else:
+                # No date in metadata, use current date
+                self.app.ui.VersionDate.setDate(QtCore.QDate.currentDate())
         
-        # Set editor name from metadata (previously known as "Last Modified By")
-        editor_name = metadata.get("editor", "")
-        self.app.ui.EditorName.setPlainText(editor_name)
+        # Handle editor name - respect empty string explicitly after closing
+        # When first_run_or_closed is True, we use empty string (for Close operation)
+        # Otherwise we use the value from metadata
+        if not self.first_run_or_closed:
+            # For loaded files or imported data, use value from metadata
+            editor_name = metadata.get("editor", "")
+            self.app.ui.EditorName.setPlainText(editor_name)
+        # Otherwise, leave it as set by close_file (should be empty string)
         
-        # Set description from metadata - ensure it's always set regardless of emptiness
-        description = metadata.get("description", "")
-        if hasattr(self.app.ui, 'VersionDescription'):
-            print(f"Setting VersionDescription to: {description}")
+        # Handle description - respect empty string explicitly after closing
+        # When first_run_or_closed is True, we use empty string (for Close operation)
+        # Otherwise we use the value from metadata
+        if not self.first_run_or_closed and hasattr(self.app.ui, 'VersionDescription'):
+            # For loaded files or imported data, use value from metadata
+            description = metadata.get("description", "")
             self.app.ui.VersionDescription.setPlainText(description)
+        # Otherwise, leave it as set by close_file (should be empty string)
         
         # Install event filter for date validation
         self.app.ui.VersionDate.installEventFilter(self)
         
-        # Update directly to the metadata fields but don't trigger validation
+        # Store the current values back in metadata without changing modified flag
+        # This ensures consistency between UI and data model
         if isinstance(self.app.ui.VersionNumber, QtWidgets.QLineEdit):
-            version_str = self.app.ui.VersionNumber.text()
+            curr_version_str = self.app.ui.VersionNumber.text()
         else:
-            version_str = str(self.app.ui.VersionNumber.value())
+            curr_version_str = str(self.app.ui.VersionNumber.value())
         
-        version_date = self.app.ui.VersionDate.date()
+        curr_version_date = self.app.ui.VersionDate.date()
+        curr_editor_name = self.app.ui.EditorName.toPlainText().strip()
         
-        # Just store what we have in the metadata without validation
-        self.app.signals_data["metadata"]["version"] = version_str
-        self.app.signals_data["metadata"]["date"] = version_date.toString("yyyy-MM-dd") 
-        self.app.signals_data["metadata"]["editor"] = editor_name
-        self.app.signals_data["metadata"]["description"] = description
+        # Get description from UI if it exists
+        curr_description = ""
+        if hasattr(self.app.ui, 'VersionDescription'):
+            curr_description = self.app.ui.VersionDescription.toPlainText().strip()
+        
+        # Update metadata with current UI values
+        self.app.signals_data["metadata"]["version"] = curr_version_str
+        self.app.signals_data["metadata"]["date"] = curr_version_date.toString("yyyy-MM-dd") 
+        self.app.signals_data["metadata"]["editor"] = curr_editor_name
+        self.app.signals_data["metadata"]["description"] = curr_description
+        
+        # Reset first_run_or_closed flag after initialization
+        # Only reset if not part of the close operation (skip_validation=True)
+        if not skip_validation:
+            self.first_run_or_closed = False
+        
+        # If skip_validation is True, restore the original modified state
+        # This ensures opening a file doesn't mark it as modified
+        if skip_validation:
+            self.app.modified = original_modified
 
     def setup_tree_widget(self):
         """Set up a tree widget in the scroll area for signal list with the updated layout"""
@@ -196,46 +265,55 @@ class UIHelpers(QObject):
     
     def check_version_for_export(self):
         """Check if version information is properly set before export/save operations"""
-        metadata = self.app.signals_data.get("metadata", {})
-        version_number = metadata.get("version", "")
-        version_date_str = metadata.get("date", "")
-        editor_name = metadata.get("editor", "")
+        # Accept loaded or imported data as-is if not modified
+        if not self.app.modified and self.app.current_file is not None:
+            return True
         
-        # Get current editor name from UI
-        current_editor = self.app.ui.EditorName.toPlainText().strip()
-        
-        # Check if editor name is valid
-        if not current_editor or current_editor.isspace() or current_editor.lower() == "enter your name":
-            QMessageBox.warning(
-                self.app,
-                "Invalid Editor Name",
-                "Please enter your name in the 'Modifier Name' field before saving."
-            )
-            # Switch to Core Configuration tab
-            self.app.ui.tabWidget.setCurrentIndex(0)
-            # Focus on editor name field
-            self.app.ui.EditorName.setFocus()
-            return False
-        
-        if not version_number or not version_date_str or not editor_name:
-            reply = QMessageBox.question(
-                self.app, 
-                "Missing Version Information", 
-                "Version information is incomplete. Would you like to update it now?",
-                QMessageBox.Yes | QMessageBox.No
-            )
+        # Skip validation when using default values for new files
+        if self.using_default_values and self.app.current_file is None:
+            return True
             
-            if reply == QMessageBox.Yes:
+        # Only validate if there's an already opened file/imported data and it has changes
+        if self.app.modified:
+            metadata = self.app.signals_data.get("metadata", {})
+            version_number = metadata.get("version", "")
+            editor_name = metadata.get("editor", "")
+            
+            # Get current editor name from UI
+            current_editor = self.app.ui.EditorName.toPlainText().strip()
+            
+            # Check if editor name is valid
+            if not current_editor or current_editor.isspace() or current_editor.lower() == "enter your name":
+                QMessageBox.warning(
+                    self.app,
+                    "Invalid Editor Name",
+                    "Please enter your name in the 'Modifier Name' field before saving."
+                )
                 # Switch to Core Configuration tab
+                self.app.ui.tabWidget.setCurrentIndex(0)
+                # Focus on editor name field
+                self.app.ui.EditorName.setFocus()
+                return False
+            
+            if not version_number or not editor_name:
+                reply = QMessageBox.question(
+                    self.app, 
+                    "Missing Version Information", 
+                    "Version information is incomplete. Would you like to update it now?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                
+                if reply == QMessageBox.Yes:
+                    # Switch to Core Configuration tab
+                    self.app.ui.tabWidget.setCurrentIndex(0)
+                    return False
+            
+            # For modified files, validate the date
+            if not self.validate_version_date():
+                # If validation fails, switch to Core Configuration tab
                 self.app.ui.tabWidget.setCurrentIndex(0)
                 return False
         
-        # Validate the date before critical operations
-        if not self.validate_version_date():
-            # If validation fails, switch to Core Configuration tab
-            self.app.ui.tabWidget.setCurrentIndex(0)
-            return False
-    
         return True
 
     def is_version_info_filled(self):
@@ -247,12 +325,12 @@ class UIHelpers(QObject):
                len(editor_name) > 0)
 
     def update_version_info(self, initial=False, ui_change=False, skip_validation=False):
-        """Update version information with validation
+        """Update version information without validation during UI interaction
         
         Args:
-            initial: True if this is initial setup, no validation needed
+            initial: True if this is initial setup
             ui_change: True if update was triggered by UI interaction
-            skip_validation: True to skip version number validation (used when loading files)
+            skip_validation: True to skip version number validation
         """
         # Get current values from UI
         if isinstance(self.app.ui.VersionNumber, QtWidgets.QLineEdit):
@@ -263,21 +341,32 @@ class UIHelpers(QObject):
         version_date = self.app.ui.VersionDate.date()
         editor_name = self.app.ui.EditorName.toPlainText().strip()
         
-        # Validate editor name - only if explicitly requested and not initial setup
-        if not initial and ui_change and (not editor_name or editor_name.isspace() or editor_name.lower() == "enter your name"):
-            # Don't show warning on startup, only on explicit changes
-            if editor_name:  # Only show warning if there's some text (but invalid)
-                QMessageBox.warning(
-                    self.app,
-                    "Invalid Editor Name",
-                    "Please enter your name in the 'Modifier Name' field."
-                )
-            return False
+        # For UI changes, always skip validation - only validate during save/export operations
+        if ui_change:
+            skip_validation = True
+        
+        # Skip validation if:
+        # 1. Initial setup (initial=True)
+        # 2. Explicitly requested (skip_validation=True)
+        # 3. Using default values for specific actions:
+        #    - Creating a new file (app.current_file is None)
+        #    - Opening an existing file/importing data (not app.modified)
+        # 4. First run or closed file (self.first_run_or_closed)
+        # 5. UI changes (ui_change=True) - per user requirement to validate only at save/export
+        should_skip_validation = (
+            initial 
+            or skip_validation
+            or ui_change  # Always skip validation for UI changes
+            or self.first_run_or_closed
+            or (self.using_default_values and (self.app.current_file is None or not self.app.modified))
+        )
         
         # Get description if field exists
         description = ""
         if hasattr(self.app.ui, 'VersionDescription'):
             description = self.app.ui.VersionDescription.toPlainText().strip()
+        else:
+            description = self.default_version_info["description"]
         
         # Create a new metadata dictionary with current values
         new_metadata = {
@@ -287,8 +376,8 @@ class UIHelpers(QObject):
             "description": description
         }
         
-        # Validate version is greater than previous (if not initial and not skip_validation)
-        if not initial and not skip_validation and "metadata" in self.app.signals_data:
+        # Validate version is greater than previous (unless validation is skipped)
+        if not should_skip_validation and "metadata" in self.app.signals_data:
             old_metadata = self.app.signals_data.get("metadata", {})
             
             # Compare version numbers
@@ -323,15 +412,40 @@ class UIHelpers(QObject):
         # Update all metadata fields at once
         self.app.signals_data["metadata"].update(new_metadata)
         
-        # Only mark as modified if not initial setup
+        # Only mark as modified if not initial setup and data was actually changed
         if not initial:
-            self.app.modified = True
-            self.update_window_title()
+            # Check if any values actually changed before marking as modified
+            old_metadata = self.original_signals_data.get("metadata", {}) if self.original_signals_data else {}
+            if (version_str != old_metadata.get("version", "") or
+                editor_name != old_metadata.get("editor", "") or
+                description != old_metadata.get("description", "")):
+                self.app.modified = True
+                self.update_window_title()
+            
+        # If values match defaults, set the flag
+        self.using_default_values = (
+            version_str == self.default_version_info["version"] and
+            editor_name == self.default_version_info["editor"] and
+            description == self.default_version_info["description"]
+        )
         
         return True
 
     def validate_version_date(self):
-        """Validate the version date is in future or equal to current date"""
+        """Validate the version date is today or in the future
+        
+        Returns:
+            bool: True if date is valid or validation should be skipped
+        """
+        # Accept loaded or imported data as-is if not modified
+        if not self.app.modified and self.app.current_file is not None:
+            return True
+            
+        # Skip validation when using default values for new files
+        if self.using_default_values and self.app.current_file is None:
+            return True
+            
+        # Validate only for user edits during save/export operations
         version_date = self.app.ui.VersionDate.date().toPyDate()
         current_date = datetime.now().date()
         
@@ -668,17 +782,18 @@ class UIHelpers(QObject):
         self.app.setWindowTitle(title)
 
     def eventFilter(self, obj, event):
-        """Event filter to validate date changes but not block application startup"""
-        if obj == self.app.ui.VersionDate and event.type() == QtCore.QEvent.FocusOut:
-            # Just show a warning, don't reset the date automatically
-            selected_date = obj.date().toPyDate()
-            current_date = datetime.now().date()
-            if selected_date < current_date:
-                QMessageBox.warning(
-                    self.app, 
-                    "Date Warning", 
-                    "Selected date is not in the future. You may need to update it before performing operations."
-                )
-                # Not forcing a date change here - let the user decide
+        """Event filter that no longer validates date changes in real-time"""
+        # Per user requirement, the date validation should only happen 
+        # during Save/Save As/Export as Excel operations, not during UI interaction
+        #
+        # if obj == self.app.ui.VersionDate and event.type() == QtCore.QEvent.FocusOut:
+        #     selected_date = obj.date().toPyDate()
+        #     current_date = datetime.now().date()
+        #     if selected_date < current_date:
+        #         QMessageBox.warning(
+        #             self.app, 
+        #             "Date Warning", 
+        #             "Selected date is not in the future. You may need to update it before performing operations."
+        #         )
         
         return super(UIHelpers, self).eventFilter(obj, event)

@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdi
 from PyQt5.QtCore import Qt
 
 # Import CorePropertiesDialog
-from core_properties_dialog import CorePropertiesDialog
+from Modules.CorePropertiesDialog import CorePropertiesDialog
 
 
 class ConfigManagerDialog(QDialog):

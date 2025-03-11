@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, QLineEdi
 from PyQt5.QtCore import Qt
 
 # Import the struct field dialog
-from struct_field_dialog import StructFieldDialog
+from Modules.UserDataTypeDialog import StructFieldDialog
 
 class CustomValueDialog(QDialog):
     """Dialog for entering custom initialization values"""

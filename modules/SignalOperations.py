@@ -1,4 +1,6 @@
 from PyQt5.QtWidgets import QMessageBox, QInputDialog, QTreeWidgetItem
+from Modules.SignalDetailsDialog import SignalDetailsDialog
+from Modules.ConfigMgrDialog import ConfigManagerDialog
 
 class SignalOperations:
     def __init__(self, app):
@@ -142,7 +144,6 @@ class SignalOperations:
 
     def edit_signal_details(self, signal_name):
         if "signals" in self.app.signals_data and signal_name in self.app.signals_data["signals"]:
-            from signal_details_dialog import SignalDetailsDialog
             # Get available cores for source selection
             available_cores = self.app.ui_helpers.get_available_cores()
             # Create and show the signal details dialog
@@ -162,8 +163,6 @@ class SignalOperations:
 
     def open_configuration_manager(self, is_new_file=False):
         """Open configuration manager with proper handling for UI structure"""
-        from config_manager_dialog import ConfigManagerDialog
-        
         # Open the configuration manager dialog without requiring version checks
         config_dialog = ConfigManagerDialog(self.app.signals_data, self.app)
         if is_new_file:

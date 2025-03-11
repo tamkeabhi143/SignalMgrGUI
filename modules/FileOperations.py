@@ -5,55 +5,94 @@ import numpy as np
 import copy  # Make sure this import is at the top
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from icecream import ic
+from datetime import datetime
 
 class FileOperations:
     def __init__(self, app):
         self.app = app
         
-    def open_file(self):
+    def open_file(self, specified_file_path=None):
+        """Open a signal configuration file
+        
+        Args:
+            specified_file_path: Optional path to file, if None will show file dialog
+        """
         # Only check for unsaved changes if:
         # 1. Modified flag is True AND
         # 2. There's a current file OR actual signal data
         if self.app.modified and (self.app.current_file is not None or 
                                  len(self.app.signals_data.get("signals", {})) > 0):
             if not self.app.ui_helpers.check_unsaved_changes():
-                return
+                return False
     
-        file_path, _ = QFileDialog.getOpenFileName(self.app, "Open Signal Configuration", "", 
-                                                  "JSON Files (*.json);;All Files (*)")
-        if file_path:
-            try:
-                with open(file_path, 'r') as file:
-                    self.app.signals_data = json.load(file)
-                self.app.current_file = file_path
-                self.app.modified = False
+        # Get the file path - either from parameter or from dialog
+        file_path = specified_file_path
+        if file_path is None:
+            file_path, _ = QFileDialog.getOpenFileName(
+                self.app, 
+                "Open Signal Configuration", 
+                "", 
+                "JSON Files (*.json);;All Files (*)"
+            )
+            if not file_path:
+                return False
+        
+        try:
+            # Load the file content without validation - accept it as-is
+            with open(file_path, 'r') as file:
+                loaded_data = json.load(file)
+            
+            # Ensure metadata exists and has all required fields
+            if "metadata" not in loaded_data:
+                loaded_data["metadata"] = {}
                 
-                # Store a deep copy of the initial state after loading
-                self.app.ui_helpers.original_signals_data = copy.deepcopy(self.app.signals_data)
-                
-                # First populate the SOC and Build Type lists from the loaded configuration
-                self.app.ui_helpers.populate_soc_list()
-                self.app.ui_helpers.populate_build_types()
-                
-                # Then refresh the signal tree and core info
-                self.app.ui_helpers.refresh_signal_tree()
-                self.app.ui_helpers.update_core_info()
-                
-                # Make sure the metadata fields in signals_data are correctly formatted
-                self.ensure_metadata_fields()
-                
-                # After loading, update version fields from metadata
-                self.app.ui_helpers.initialize_version_fields()
-                
-                # Update signal count display
-                self.app.ui_helpers.update_signal_count_display()
-                self.app.ui_helpers.update_window_title()
-                
+            metadata = loaded_data.get("metadata", {})
+            
+            # Update application state with the loaded data
+            self.app.signals_data = loaded_data
+            self.app.current_file = file_path
+            self.app.modified = False
+            
+            # Store a deep copy of the initial state
+            self.app.ui_helpers.original_signals_data = copy.deepcopy(self.app.signals_data)
+            
+            # Explicitly set these flags to prevent default values
+            self.app.ui_helpers.using_default_values = False
+            self.app.ui_helpers.first_run_or_closed = False
+            
+            # Populate UI elements with the loaded data
+            self.app.ui_helpers.populate_soc_list()
+            self.app.ui_helpers.populate_build_types()
+            self.app.ui_helpers.refresh_signal_tree()
+            self.app.ui_helpers.update_core_info()
+            
+            # Initialize version fields from metadata without validation
+            self.app.ui_helpers.initialize_version_fields(skip_validation=True)
+            
+            # Explicitly update editor and description fields from metadata
+            editor_name = metadata.get("editor", "")
+            description = metadata.get("description", "")
+            
+            # Force set the UI elements
+            self.app.ui.EditorName.setPlainText(editor_name)
+            if hasattr(self.app.ui, 'VersionDescription'):
+                self.app.ui.VersionDescription.setPlainText(description)
+            
+            # Update signal count and window title
+            self.app.ui_helpers.update_signal_count_display()
+            self.app.ui_helpers.update_window_title()
+            
+            # Only show success message if file was opened via dialog
+            if specified_file_path is None:
                 QMessageBox.information(self.app, "Success", f"File loaded: {file_path}")
-            except Exception as e:
-                QMessageBox.critical(self.app, "Error", f"Failed to open file: {str(e)}")
-                import traceback
-                traceback.print_exc()  # Print detailed error for debugging
+            
+            return True
+        
+        except Exception as e:
+            QMessageBox.critical(self.app, "Error", f"Failed to open file: {str(e)}")
+            import traceback
+            traceback.print_exc()  # Print detailed error for debugging
+            return False
 
     def save_file(self):
         """Save file with version check"""
@@ -74,24 +113,49 @@ class FileOperations:
             self.app.ui.EditorName.setFocus()
             return
         
+        # Ensure the latest version information from UI is captured in signals_data
+        self.app.ui_helpers.update_version_info(skip_validation=True)
+        
         # Continue with save
-        if not self.app.current_file:
+        if not self.app.current_file or not os.path.exists(self.app.current_file):
+            # If current_file doesn't exist (e.g., it was a temporary file that was deleted)
+            # or if no current file is set, prompt for save location
             self.save_file_as()
         else:
             try:
                 with open(self.app.current_file, 'w') as file:
                     json.dump(self.app.signals_data, file, indent=4)
                 self.app.modified = False
+                
+                # After saving, the file is no longer using default values
+                self.app.ui_helpers.using_default_values = False
+                
+                # Store a copy of the saved state as the original for future comparisons
+                import copy
+                self.app.ui_helpers.original_signals_data = copy.deepcopy(self.app.signals_data)
+                
                 self.app.ui_helpers.update_window_title()
                 QMessageBox.information(self.app, "Success", f"File saved: {self.app.current_file}")
             except Exception as e:
                 QMessageBox.critical(self.app, "Error", f"Failed to save file: {str(e)}")
+                # If save fails, offer to save as a different file
+                reply = QMessageBox.question(
+                    self.app,
+                    "Save Error",
+                    f"Failed to save to {self.app.current_file}. Would you like to save to a different location?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                if reply == QMessageBox.Yes:
+                    self.save_file_as()
 
     def save_file_as(self):
         """Save file as with version check"""
         # Check version information before saving
         if not self.app.ui_helpers.check_version_for_export():
             return
+        
+        # Ensure the latest version information from UI is captured in signals_data
+        self.app.ui_helpers.update_version_info(skip_validation=True)
         
         file_path, _ = QFileDialog.getSaveFileName(self.app, "Save Signal Configuration", "", 
                                                   "JSON Files (*.json);;All Files (*)")
@@ -101,6 +165,39 @@ class FileOperations:
 
     def create_new_file(self):
         if self.app.ui_helpers.check_unsaved_changes():
+            # Clear current file path
+            self.app.current_file = None
+            
+            # Reset to default signal data structure with proper metadata
+            self.app.signals_data = {
+                "metadata": {
+                    "version": self.app.ui_helpers.default_version_info["version"],
+                    "date": self.app.ui_helpers.default_version_info["date"],
+                    "editor": self.app.ui_helpers.default_version_info["editor"],
+                    "description": self.app.ui_helpers.default_version_info["description"]
+                },
+                "soc_type": "Windows",
+                "build_type": "SMP",
+                "soc_list": ["Windows"],
+                "build_list": ["SMP"],
+                "core_info": {},
+                "signals": {}
+            }
+            
+            # For create_new_file, we don't want to use default values automatically
+            # Instead, let the user provide their own values
+            self.app.ui_helpers.using_default_values = False
+            self.app.ui_helpers.first_run_or_closed = False
+            
+            # Reset modified flag
+            self.app.modified = False
+            
+            # Update UI elements
+            self.app.ui_helpers.initialize_version_fields()
+            self.app.ui_helpers.refresh_signal_tree()
+            self.app.ui_helpers.update_signal_count_display()
+            self.app.ui_helpers.update_window_title()
+            
             # Open configuration manager to set up the new file
             self.app.signal_ops.open_configuration_manager(is_new_file=True)
 
@@ -115,7 +212,7 @@ class FileOperations:
             return
             
         file_path, _ = QFileDialog.getSaveFileName(self.app, "Export to Excel", "", 
-                                                 "Excel Files (*.xlsx);;All Files (*)")
+                                                 "Excel Files (*.xlsx *.xls)")
         if file_path:
             try:
                 # Create Excel writer with xlsxwriter
@@ -313,48 +410,62 @@ class FileOperations:
             imported_data = self.read_excel_config(file_path)
             
             if imported_data:
-                # Update signals data
-                self.app.signals_data = copy.deepcopy(imported_data)
+                # Create temporary file name based on the Excel file
+                excel_name = os.path.basename(file_path)
+                excel_name_without_ext = os.path.splitext(excel_name)[0]
+                temp_file_name = f"{excel_name_without_ext}_imported.json"
                 
-                # Store a deep copy of the initial state after importing
-                self.app.ui_helpers.original_signals_data = copy.deepcopy(imported_data)
+                # Create temporary file path in the same directory as the Excel file
+                excel_dir = os.path.dirname(file_path)
+                temp_json_path = os.path.join(excel_dir, temp_file_name)
                 
-                # Make sure the metadata fields in signals_data are correctly formatted
-                self.ensure_metadata_fields()
+                # Write the imported data to the temporary JSON file
+                with open(temp_json_path, 'w') as temp_file:
+                    json.dump(imported_data, temp_file, indent=4)
                 
-                # Explicitly set the description in the UI to ensure it's displayed
-                if hasattr(self.app.ui, 'VersionDescription') and "metadata" in imported_data:
-                    description = imported_data["metadata"].get("description", "")
-                    print(f"Setting description field to: {description}")
-                    self.app.ui.VersionDescription.setPlainText(description)
+                # Open the temporary file
+                success = self.open_file(temp_json_path)
                 
-                # Update UI with imported data
-                self.app.ui_helpers.refresh_signal_tree()
-                self.app.ui_helpers.update_signal_count_display()
-                self.app.ui_helpers.update_core_info()
+                if success:
+                    # Ensure metadata was properly imported
+                    metadata = imported_data.get("metadata", {})
+                    
+                    # Explicitly set editor name and description again to ensure they are properly updated
+                    editor_name = metadata.get("editor", "")
+                    description = metadata.get("description", "")
+                    
+                    # Force update the UI fields
+                    self.app.ui.EditorName.setPlainText(editor_name)
+                    if hasattr(self.app.ui, 'VersionDescription'):
+                        self.app.ui.VersionDescription.setPlainText(description)
+                    
+                    # Per user requirement: mark as NOT modified after import
+                    # Store the current state as the baseline to prevent detecting changes
+                    import copy
+                    self.app.ui_helpers.original_signals_data = copy.deepcopy(self.app.signals_data)
+                    
+                    # Set to unmodified state (no changes)
+                    self.app.modified = False
+                    
+                    # Keep the temporary file path as current file for UI display
+                    # self.app.current_file is already set by open_file()
+                    
+                    # Update window title to reflect the imported Excel filename
+                    self.app.ui_helpers.update_window_title()
+                    
+                    QMessageBox.information(
+                        self.app, 
+                        "Import Successful", 
+                        f"Successfully imported configuration from Excel: {excel_name}"
+                    )
                 
-                # Set modified flag
-                self.app.modified = True
-                
-                # Update window title
-                self.app.ui_helpers.update_window_title()
-                
-                # Update SOC and Build Type lists with values from imported data
-                self.app.ui_helpers.populate_soc_list()
-                self.app.ui_helpers.populate_build_types()
-                
-                # Update version fields from metadata - this will set EditorName to the imported value
-                self.app.ui_helpers.initialize_version_fields()
-                
-                # Clear current file path for new imported data
-                if not self.app.current_file:
-                    self.app.current_file = None
-                
-                QMessageBox.information(
-                    self.app, 
-                    "Import Successful", 
-                    f"Successfully imported configuration from Excel."
-                )
+                # Delete the temporary file but keep the path for display
+                try:
+                    if os.path.exists(temp_json_path):
+                        os.remove(temp_json_path)
+                        print(f"Temporary file deleted: {temp_json_path}")
+                except Exception as e:
+                    print(f"Could not delete temporary file: {e}")
             else:
                 QMessageBox.warning(
                     self.app,
@@ -565,54 +676,80 @@ class FileOperations:
             raise
 
     def close_file(self):
-        """Close the current file without exiting the application"""
-        # Check for unsaved changes
+        """Close the current file and reset the UI state"""
         if self.app.modified:
             reply = QMessageBox.question(
                 self.app, 
-                "Unsaved Changes", 
-                "You have unsaved changes. Do you want to save them?",
-                QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel
+                'Unsaved Changes',
+                'You have unsaved changes. Do you want to save them before closing?',
+                QMessageBox.Yes | QMessageBox.No | QMessageBox.Cancel
             )
-            if reply == QMessageBox.Save:
-                self.save_file()
+            
+            if reply == QMessageBox.Yes:
+                if not self.save_file():  # If save failed or was cancelled
+                    return
             elif reply == QMessageBox.Cancel:
-                return False
+                return
         
-        # Reset to an empty state
+        # Reset the app to initial state
+        self.app.current_file = None
+        
+        # Create a default values object with empty description and editor
+        empty_defaults = {
+            "version": self.app.ui_helpers.default_version_info["version"],
+            "date": datetime.now().strftime("%Y-%m-%d"),
+            "editor": "",
+            "description": ""  # Empty description as requested
+        }
+        
+        # Reset signals data with empty default values
         self.app.signals_data = {
             "metadata": {
-                "version": "1.0",
-                "date": "",
-                "editor": "",
-                "description": ""  # Empty description
+                "version": empty_defaults["version"],
+                "date": empty_defaults["date"],
+                "editor": empty_defaults["editor"],
+                "description": empty_defaults["description"]
             },
-            "soc_type": "Windows",  # Default SOC
-            "build_type": "SMP",    # Default Build Type
+            "soc_type": "Windows",
+            "build_type": "SMP",
             "soc_list": ["Windows"],
             "build_list": ["SMP"],
             "core_info": {},
             "signals": {}
         }
-        self.app.current_file = None
+        
+        # Store the clean state as the original state to avoid marking as modified
+        import copy
+        self.app.ui_helpers.original_signals_data = copy.deepcopy(self.app.signals_data)
+        
+        # Set the flags to use default values
+        self.app.ui_helpers.using_default_values = True
+        self.app.ui_helpers.first_run_or_closed = True
+        
+        # Reset modified flag before updating UI elements to prevent marking as modified
         self.app.modified = False
         
-        # Clear editor name and description fields directly
+        # Explicitly set the editor name and description fields to empty
         self.app.ui.EditorName.setPlainText("")
         if hasattr(self.app.ui, 'VersionDescription'):
             self.app.ui.VersionDescription.setPlainText("")
         
-        # Update UI
-        self.app.ui_helpers.update_window_title()
-        self.app.ui_helpers.populate_soc_list()
-        self.app.ui_helpers.populate_build_types()
+        # Update UI elements with skip_validation to prevent marking as modified
+        self.app.ui_helpers.initialize_version_fields(skip_validation=True)
         self.app.ui_helpers.refresh_signal_tree()
-        self.app.ui_helpers.update_core_info()
-        self.app.ui_helpers.initialize_version_fields()
         self.app.ui_helpers.update_signal_count_display()
         
-        QMessageBox.information(self.app, "File Closed", "File has been closed.")
-        return True
+        # Double-check that the editor name and description are still empty
+        # (in case initialize_version_fields changed them)
+        self.app.ui.EditorName.setPlainText("")
+        if hasattr(self.app.ui, 'VersionDescription'):
+            self.app.ui.VersionDescription.setPlainText("")
+        
+        # Ensure modified flag is still False after all UI updates
+        self.app.modified = False
+        self.app.ui_helpers.update_window_title()
+        
+        QMessageBox.information(self.app, "File Closed", "File closed successfully.")
 
     def close_application(self):
         """Close the application with prompt for unsaved changes"""

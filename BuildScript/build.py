@@ -10,7 +10,7 @@ from pathlib import Path
 
 def read_config():
     """Read configuration from pkg_config.json"""
-    config_path = os.path.join(os.path.dirname(__file__), "AppConfig.json")
+    config_path = os.path.join(os.path.dirname(__file__), "..", "Cfg", "AppConfig.json")
     if os.path.exists(config_path):
         with open(config_path, 'r') as f:
             return json.load(f)
@@ -35,7 +35,7 @@ def create_spec_file(config, platform_name):
     root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
     
     # Main script
-    main_script = os.path.join(root_dir, "signal_mgr_app.py")
+    main_script = os.path.join(root_dir, "App", "SignalMgrApp.py")
     
     # Icon path
     icon_path = ""

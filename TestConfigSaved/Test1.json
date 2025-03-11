@@ -1,16 +1,16 @@
 {
     "metadata": {
-        "version": "1.1",
-        "date": "2025-03-07",
+        "version": "1.12",
+        "date": "2025-03-12",
         "editor": "Abhijit Tamke",
-        "description": ""
+        "description": "Initial GUI"
     },
     "soc_type": "Aurix",
     "build_type": "SMP",
     "soc_list": [
+        "Windows",
         "Aurix",
-        "Sitara",
-        "Windows"
+        "Sitara"
     ],
     "build_list": [
         "SMP"
@@ -19,21 +19,19 @@
         "Aurix": {
             "Core1": {
                 "description": "",
-                "is_autosar": true,
                 "is_master": true,
                 "is_qnx": false,
+                "is_autosar": true,
                 "is_sim": false,
-                "name": "Core1",
                 "os": "Autosar",
                 "soc_family": "Infineon"
             },
             "Core2": {
                 "description": "",
-                "is_autosar": true,
                 "is_master": false,
                 "is_qnx": false,
+                "is_autosar": true,
                 "is_sim": false,
-                "name": "Core2",
                 "os": "Autosar",
                 "soc_family": "Infineon"
             }
@@ -41,41 +39,37 @@
         "Sitara": {
             "MCU1_0": {
                 "description": "",
-                "is_autosar": true,
                 "is_master": true,
                 "is_qnx": false,
+                "is_autosar": true,
                 "is_sim": false,
-                "name": "MCU1_0",
                 "os": "Autosar",
                 "soc_family": "TI"
             },
             "MCU2_0": {
                 "description": "",
-                "is_autosar": false,
                 "is_master": false,
                 "is_qnx": false,
+                "is_autosar": false,
                 "is_sim": false,
-                "name": "MCU2_0",
                 "os": "FreeRTOS",
                 "soc_family": "TI"
             },
             "MCU2_1": {
                 "description": "",
-                "is_autosar": false,
                 "is_master": false,
                 "is_qnx": false,
+                "is_autosar": false,
                 "is_sim": false,
-                "name": "MCU2_1",
                 "os": "FreeRTOS",
                 "soc_family": "TI"
             },
             "MCU3_0": {
                 "description": "",
-                "is_autosar": false,
                 "is_master": false,
                 "is_qnx": false,
+                "is_autosar": false,
                 "is_sim": false,
-                "name": "MCU3_0",
                 "os": "FreeRTOS",
                 "soc_family": "TI"
             }
@@ -85,13 +79,13 @@
         "TestData1": {
             "Variable_Port_Name": "TestData_Var1",
             "Memory Region": "DDR",
-            "Buffer count_IPC": 1,
             "Type": "Concurrent",
             "InitValue": "ZeroMemory",
             "Notifiers": false,
             "Source": "Aurix.Core1",
             "Impl_Approach": "SharedMemory",
             "GetObjRef": false,
+            "Buffer count_IPC": 1,
             "SM_Buff_Count": 3,
             "Timeout": 10,
             "Periodicity": 10,
@@ -103,18 +97,21 @@
             "struct_fields": {},
             "core_Aurix_Core1": false,
             "core_Aurix_Core2": true,
-            "core_Sitara_MCU1_0": false
+            "core_Sitara_MCU1_0": false,
+            "core_Sitara_MCU2_0": false,
+            "core_Sitara_MCU2_1": false,
+            "core_Sitara_MCU3_0": false
         },
         "Twhjda": {
             "Variable_Port_Name": "Twhjda",
             "Memory Region": "DDR",
-            "Buffer count_IPC": 1,
             "Type": "Concurrent",
             "InitValue": "ZeroMemory",
             "Notifiers": false,
             "Source": "Aurix.Core2",
             "Impl_Approach": "SharedMemory",
             "GetObjRef": false,
+            "Buffer count_IPC": 1,
             "SM_Buff_Count": 1,
             "Timeout": 10,
             "Periodicity": 10,
@@ -126,8 +123,36 @@
             "struct_fields": {},
             "core_Aurix_Core1": true,
             "core_Aurix_Core2": false,
-            "core_Sitara_MCU1_0": false
+            "core_Sitara_MCU1_0": false,
+            "core_Sitara_MCU2_0": false,
+            "core_Sitara_MCU2_1": false,
+            "core_Sitara_MCU3_0": false
+        },
+        "jkskd": {
+            "Variable_Port_Name": "jkskd",
+            "Memory Region": "DDR",
+            "Type": "Concurrent",
+            "InitValue": "ZeroMemory",
+            "Notifiers": false,
+            "Source": "Sitara.MCU1_0",
+            "Impl_Approach": "SharedMemory",
+            "GetObjRef": false,
+            "Buffer count_IPC": 1,
+            "SM_Buff_Count": 1,
+            "Timeout": 10,
+            "Periodicity": 10,
+            "ASIL": "QM",
+            "Checksum": "Additive",
+            "DataType": "INT32",
+            "description": "New signal",
+            "is_struct": false,
+            "struct_fields": {},
+            "core_Aurix_Core1": true,
+            "core_Aurix_Core2": false,
+            "core_Sitara_MCU1_0": false,
+            "core_Sitara_MCU2_0": false,
+            "core_Sitara_MCU2_1": false,
+            "core_Sitara_MCU3_0": false
         }
-    },
-    "export_sheet_name": "Config"
+    }
 }
