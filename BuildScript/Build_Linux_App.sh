@@ -9,11 +9,12 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
-# Check if PyInstaller is installed
-python3 -c "import PyInstaller" &> /dev/null
-if [ $? -ne 0 ]; then
-    echo "PyInstaller is not installed. Installing..."
-    python3 -m pip install PyInstaller
+# Install required packages
+echo "Installing required packages..."
+if [ -f "requirements.txt" ]; then
+    python3 -m pip install -r requirements.txt
+else
+    python3 -m pip install PyInstaller Pillow
 fi
 
 # Create build directory if it doesn't exist

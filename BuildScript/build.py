@@ -24,6 +24,46 @@ def read_config():
         "add_data": []
     }
 
+def ensure_icons_exist(config):
+    """Ensure that icon files exist, create default ones if they don't"""
+    script_dir = os.path.dirname(__file__)
+    
+    # Windows icon path
+    windows_icon = os.path.join(script_dir, config["windows_icon"])
+    if not os.path.exists(windows_icon):
+        print(f"Windows icon not found at {windows_icon}, creating default icon...")
+        # Create a minimal .ico file
+        try:
+            from PIL import Image
+            img = Image.new('RGB', (48, 48), color=(0, 120, 215))
+            img.save(windows_icon, format='ICO')
+            print(f"Created default Windows icon at {windows_icon}")
+        except ImportError:
+            print("PIL (Pillow) not installed, can't create default icon")
+            print("You may need to install Pillow: pip install Pillow")
+            # Create an empty file as a fallback
+            with open(windows_icon, 'wb') as f:
+                f.write(b'')
+    
+    # Linux icon path
+    linux_icon = os.path.join(script_dir, config["linux_icon"])
+    if not os.path.exists(linux_icon):
+        print(f"Linux icon not found at {linux_icon}, creating default icon...")
+        # Create a minimal .png file
+        try:
+            from PIL import Image
+            img = Image.new('RGB', (48, 48), color=(0, 120, 215))
+            img.save(linux_icon, format='PNG')
+            print(f"Created default Linux icon at {linux_icon}")
+        except ImportError:
+            print("PIL (Pillow) not installed, can't create default icon")
+            print("You may need to install Pillow: pip install Pillow")
+            # Create an empty file as a fallback
+            with open(linux_icon, 'wb') as f:
+                f.write(b'')
+    
+    return windows_icon, linux_icon
+
 def create_spec_file(config, platform_name):
     """Create a PyInstaller spec file based on configuration"""
     app_name = config["app_name"]
@@ -36,13 +76,19 @@ def create_spec_file(config, platform_name):
     
     # Main script
     main_script = os.path.join(root_dir, "App", "SignalMgrApp.py")
+    if not os.path.exists(main_script):
+        print(f"Error: Main script not found at {main_script}")
+        return None
+    
+    # Make sure icons exist
+    windows_icon, linux_icon = ensure_icons_exist(config)
     
     # Icon path
     icon_path = ""
-    if platform_name == "windows" and os.path.exists(os.path.join(os.path.dirname(__file__), config["windows_icon"])):
-        icon_path = os.path.join(os.path.dirname(__file__), config["windows_icon"])
-    elif platform_name == "linux" and os.path.exists(os.path.join(os.path.dirname(__file__), config["linux_icon"])):
-        icon_path = os.path.join(os.path.dirname(__file__), config["linux_icon"])
+    if platform_name == "windows" and os.path.exists(windows_icon):
+        icon_path = windows_icon
+    elif platform_name == "linux" and os.path.exists(linux_icon):
+        icon_path = linux_icon
     
     # Create spec file content
     spec_content = f"""# -*- mode: python ; coding: utf-8 -*-
@@ -60,6 +106,9 @@ a = Analysis(
         src = data_item.get("src", "")
         dest = data_item.get("dest", "")
         if src and dest:
+            # Convert relative paths to absolute
+            if src.startswith("../"):
+                src = os.path.abspath(os.path.join(os.path.dirname(__file__), src))
             spec_content += f"""
         ('{src.replace('\\', '\\\\')}', '{dest}'),"""
     
@@ -136,6 +185,9 @@ def build_package(platform_name):
     
     # Create spec file
     spec_path = create_spec_file(config, platform_name)
+    if not spec_path:
+        print("Failed to create spec file")
+        return False
     
     # Build command
     build_cmd = ["pyinstaller", "--clean", "--dist-dir", "../dist", spec_path]

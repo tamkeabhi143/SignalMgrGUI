@@ -9,11 +9,12 @@ if %ERRORLEVEL% neq 0 (
     exit /b 1
 )
 
-:: Check if PyInstaller is installed
-python -c "import PyInstaller" >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo PyInstaller is not installed. Installing...
-    python -m pip install PyInstaller
+:: Install required packages
+echo Installing required packages...
+if exist "requirements.txt" (
+    python -m pip install -r requirements.txt
+) else (
+    python -m pip install PyInstaller Pillow
 )
 
 :: Create build directory if it doesn't exist

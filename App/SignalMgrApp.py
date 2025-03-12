@@ -48,6 +48,9 @@ class SignalMgrApp(QtWidgets.QMainWindow):
         self.undo_stack = []
         self.redo_stack = []
         
+        # Add BoardSelect dropdown to the UI
+        self.create_board_select_dropdown()
+        
         # Remove the Operation menu if it exists
         operation_menu = self.findChild(QtWidgets.QMenu, "menuOperation")
         if (operation_menu):
@@ -72,6 +75,7 @@ class SignalMgrApp(QtWidgets.QMainWindow):
         # Initialize SOC list and build types
         self.ui_helpers.populate_soc_list()
         self.ui_helpers.populate_build_types()
+        self.populate_board_select()
         
         # Initialize version fields
         self.ui_helpers.initialize_version_fields()
@@ -83,6 +87,53 @@ class SignalMgrApp(QtWidgets.QMainWindow):
         
         # Set window title
         self.setWindowTitle("Signal Manager Tool")
+
+    def create_board_select_dropdown(self):
+        """Create and add the BoardSelect dropdown to the UI"""
+        try:
+            # Create the BoardSelect dropdown
+            self.ui.BoardSelect = QtWidgets.QComboBox(self.ui.SignalOpFrame)
+            self.ui.BoardSelect.setObjectName("BoardSelect")
+            
+            # Get the horizontal layout of the SignalOpFrame
+            horizontal_layout = self.ui.SignalOpFrame.layout()
+            
+            # Insert the BoardSelect dropdown before the SOCList
+            # Find the index of SOCList in the layout
+            for i in range(horizontal_layout.count()):
+                if horizontal_layout.itemAt(i).widget() == self.ui.SOCList:
+                    # Create a label for the BoardSelect dropdown
+                    self.ui.BoardSelectLabel = QtWidgets.QLabel(self.ui.SignalOpFrame)
+                    self.ui.BoardSelectLabel.setObjectName("BoardSelectLabel")
+                    self.ui.BoardSelectLabel.setText("BoardSelect")
+                    
+                    # Insert the label and dropdown before SOCList
+                    horizontal_layout.insertWidget(i - 1, self.ui.BoardSelectLabel)
+                    horizontal_layout.insertWidget(i, self.ui.BoardSelect)
+                    break
+        except Exception as e:
+            print(f"Error creating BoardSelect dropdown: {e}")
+
+    def populate_board_select(self):
+        """Populate the BoardSelect dropdown with default board options"""
+        try:
+            # Clear the dropdown first
+            self.ui.BoardSelect.clear()
+            
+            # Add the default board options
+            board_options = ["j721e_hyd", "j721s2_hyd", "j721s2_hyd3", "TC4", "GM_VIP", "DCU_A1H", "DCU_A1L"]
+            for board in board_options:
+                self.ui.BoardSelect.addItem(board)
+            
+            # Set the first option as default
+            self.ui.BoardSelect.setCurrentIndex(0)
+            
+            # Store the board options in signals_data for persistence
+            if "board_options" not in self.signals_data:
+                self.signals_data["board_options"] = board_options
+                self.signals_data["selected_board"] = board_options[0]
+        except Exception as e:
+            print(f"Error populating BoardSelect dropdown: {e}")
 
     def setup_connections(self):
         # Connect File menu actions
@@ -132,6 +183,7 @@ class SignalMgrApp(QtWidgets.QMainWindow):
         # Connect combo boxes
         self.ui.SOCList.currentIndexChanged.connect(self.ui_helpers.soc_selection_changed)
         self.ui.BuildImageType.currentIndexChanged.connect(self.ui_helpers.build_type_changed)
+        self.ui.BoardSelect.currentIndexChanged.connect(self.board_selection_changed)
         
         # Connect version fields - update for QLineEdit
         if isinstance(self.ui.VersionNumber, QtWidgets.QLineEdit):
@@ -145,6 +197,15 @@ class SignalMgrApp(QtWidgets.QMainWindow):
         # Additional change: Set tab order to improve usability
         self.ui.VersionNumber.setTabOrder(self.ui.VersionNumber, self.ui.VersionDate)
         self.ui.VersionDate.setTabOrder(self.ui.VersionDate, self.ui.EditorName)
+
+    def board_selection_changed(self, index):
+        """Handle board selection change"""
+        try:
+            selected_board = self.ui.BoardSelect.currentText()
+            self.signals_data["selected_board"] = selected_board
+            self.modified = True
+        except Exception as e:
+            print(f"Error handling board selection change: {e}")
 
     # Add wrapper methods to handle menu actions that need special parameter handling
     def open_file_wrapper(self):
