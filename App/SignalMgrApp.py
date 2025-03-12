@@ -109,6 +109,15 @@ class SignalMgrApp(QtWidgets.QMainWindow):
         self.ui.actionIpcManager.triggered.connect(self.code_gen.generate_ipc_manager)
         self.ui.actionIpcOvEthMgr.triggered.connect(self.code_gen.generate_ipc_eth_mgr)
         
+        # Add Generate Header File action to the Code Generation menu
+        try:
+            from PyQt5.QtWidgets import QAction
+            self.actionGenerateHeader = QAction("Generate Header File", self)
+            self.actionGenerateHeader.triggered.connect(self.code_gen.generate_header_file)
+            self.ui.menuCodeGeneration.addAction(self.actionGenerateHeader)
+        except Exception as e:
+            print(f"Could not add header generation menu item: {e}")
+        
         # Connect Help menu actions
         self.ui.actionAbout_Tool_Usage.triggered.connect(self.show_tool_usage)
         self.ui.actionLicense.triggered.connect(self.show_license)

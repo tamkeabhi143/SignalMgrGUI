@@ -1,0 +1,147 @@
+{
+    "metadata": {
+        "version": "1.1",
+        "date": "2025-03-13",
+        "editor": "Abhijit Tamke",
+        "description": "Export Test"
+    },
+    "soc_type": "Aurix",
+    "build_type": "SMP",
+    "soc_list": [
+        "Windows",
+        "Aurix"
+    ],
+    "build_list": [
+        "SMP"
+    ],
+    "core_info": {
+        "Aurix": {
+            "Core0": {
+                "description": "",
+                "is_master": true,
+                "is_qnx": false,
+                "is_autosar": true,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            },
+            "Core1": {
+                "description": "",
+                "is_master": false,
+                "is_qnx": false,
+                "is_autosar": true,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            },
+            "Core2": {
+                "description": "",
+                "is_master": false,
+                "is_qnx": false,
+                "is_autosar": true,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            },
+            "Core3": {
+                "description": "",
+                "is_master": false,
+                "is_qnx": false,
+                "is_autosar": true,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            },
+            "Core4": {
+                "description": "",
+                "is_master": false,
+                "is_qnx": false,
+                "is_autosar": true,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            },
+            "Core5": {
+                "description": "",
+                "is_master": false,
+                "is_qnx": false,
+                "is_autosar": true,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            }
+        }
+    },
+    "signals": {
+        "TestDataV1": {
+            "Variable_Port_Name": "TestDataV1",
+            "Memory Region": "DDR",
+            "Type": "Concurrent",
+            "InitValue": "ZeroMemory",
+            "Notifiers": false,
+            "Source": "Aurix.Core0",
+            "Impl_Approach": "SharedMemory",
+            "GetObjRef": false,
+            "Buffer count_IPC": 1,
+            "SM_Buff_Count": 3,
+            "Timeout": 10,
+            "Periodicity": 10,
+            "ASIL": "QM",
+            "Checksum": "Additive",
+            "DataType": "STRUCT",
+            "description": "New signal",
+            "is_struct": true,
+            "struct_fields": {
+                "flag_b": {
+                    "type": "bool_t",
+                    "description": ""
+                },
+                "data_u8": {
+                    "type": "Array[uint8][10]",
+                    "description": ""
+                }
+            },
+            "core_Aurix_Core0": false,
+            "core_Aurix_Core1": true,
+            "core_Aurix_Core2": true,
+            "core_Aurix_Core3": true,
+            "core_Aurix_Core4": true,
+            "core_Aurix_Core5": true
+        },
+        "TestDataV2": {
+            "Variable_Port_Name": "TestDataV2",
+            "Memory Region": "DDR",
+            "Type": "Concurrent",
+            "InitValue": "ZeroMemory",
+            "Notifiers": false,
+            "Source": "Aurix.Core1",
+            "Impl_Approach": "SharedMemory",
+            "GetObjRef": false,
+            "Buffer count_IPC": 1,
+            "SM_Buff_Count": 1,
+            "Timeout": 10,
+            "Periodicity": 10,
+            "ASIL": "QM",
+            "Checksum": "Additive",
+            "DataType": "STRUCT",
+            "description": "New signal",
+            "is_struct": true,
+            "struct_fields": {
+                "flag_b": {
+                    "type": "bool_t",
+                    "description": ""
+                },
+                "data_u8": {
+                    "type": "Array[uint8][10]",
+                    "description": ""
+                }
+            },
+            "core_Aurix_Core0": true,
+            "core_Aurix_Core1": false,
+            "core_Aurix_Core2": true,
+            "core_Aurix_Core3": true,
+            "core_Aurix_Core4": true,
+            "core_Aurix_Core5": true
+        }
+    }
+}
