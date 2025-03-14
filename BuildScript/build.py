@@ -90,14 +90,18 @@ def create_spec_file(config, platform_name):
     elif platform_name == "linux" and os.path.exists(linux_icon):
         icon_path = linux_icon
     
+    # Process paths to handle backslashes properly
+    processed_main_script = main_script.replace('\\', '\\\\')
+    processed_root_dir = root_dir.replace('\\', '\\\\')
+    
     # Create spec file content
     spec_content = f"""# -*- mode: python ; coding: utf-8 -*-
 
 block_cipher = None
 
 a = Analysis(
-    ['{main_script.replace('\\', '\\\\')}'],
-    pathex=['{root_dir.replace('\\', '\\\\')}'],
+    ['{processed_main_script}'],
+    pathex=['{processed_root_dir}'],
     binaries=[],
     datas=["""
     
@@ -109,9 +113,15 @@ a = Analysis(
             # Convert relative paths to absolute
             if src.startswith("../"):
                 src = os.path.abspath(os.path.join(os.path.dirname(__file__), src))
+            processed_src = src.replace('\\', '\\\\')
             spec_content += f"""
-        ('{src.replace('\\', '\\\\')}', '{dest}'),"""
+        ('{processed_src}', '{dest}'),"""
     
+    # Process icon path if it exists
+    processed_icon_path = ""
+    if icon_path:
+        processed_icon_path = icon_path.replace('\\', '\\\\')
+        
     spec_content += f"""
     ],
     hiddenimports=[],
@@ -139,7 +149,7 @@ exe = EXE(
     
     if icon_path:
         spec_content += f"""
-    icon='{icon_path.replace('\\', '\\\\')}',"""
+    icon='{processed_icon_path}',"""
     
     spec_content += f"""
     console=False,
@@ -189,52 +199,129 @@ def build_package(platform_name):
         print("Failed to create spec file")
         return False
     
-    # Build command
-    build_cmd = ["pyinstaller", "--clean", "--dist-dir", "../dist", spec_path]
+    # Build command - use Python module approach instead of direct command
+    # This is more reliable as it doesn't depend on PyInstaller being in PATH
+    build_cmd = [sys.executable, "-m", "PyInstaller", "--clean", "--distpath", "../dist", spec_path]
+    
+    print(f"Running build command: {' '.join(build_cmd)}")
     
     # Run build
-    result = subprocess.run(build_cmd, check=False)
-    if result.returncode != 0:
-        print(f"Build failed with exit code {result.returncode}")
-        return False
+    try:
+        result = subprocess.run(build_cmd, check=False)
+        if result.returncode != 0:
+            print(f"Build failed with exit code {result.returncode}")
+            return False
+    except Exception as e:
+        print(f"Error running PyInstaller: {str(e)}")
+        print("Attempting alternative method...")
+        try:
+            # Try an alternative method using pip to ensure PyInstaller is installed
+            subprocess.run([sys.executable, "-m", "pip", "install", "PyInstaller"], check=False)
+            build_cmd = [sys.executable, "-m", "PyInstaller", "--clean", "--distpath", "../dist", spec_path]
+            result = subprocess.run(build_cmd, check=False)
+            if result.returncode != 0:
+                print(f"Build still failed with exit code {result.returncode}")
+                return False
+        except Exception as e2:
+            print(f"Second attempt also failed: {str(e2)}")
+            return False
     
     # Clean up spec file
-    os.unlink(spec_path)
+    try:
+        os.unlink(spec_path)
+    except Exception as e:
+        print(f"Warning: Could not remove spec file: {str(e)}")
     
     # Move files to correct location
     dist_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "dist"))
     app_dir = os.path.join(dist_dir, app_name)
     
+    if not os.path.exists(app_dir):
+        print(f"Warning: Expected output directory not found: {app_dir}")
+        print("Checking for other output directories...")
+        for item in os.listdir(dist_dir):
+            full_path = os.path.join(dist_dir, item)
+            if os.path.isdir(full_path):
+                print(f"Found directory: {item}")
+                app_dir = full_path
+                break
+    
     # For Windows, create a zip file
     if platform_name == "windows":
-        import zipfile
-        zip_path = os.path.join(dist_dir, f"{app_name}_v{config['version']}_win.zip")
-        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-            for root, _, files in os.walk(app_dir):
-                for file in files:
-                    file_path = os.path.join(root, file)
-                    arcname = os.path.relpath(file_path, dist_dir)
-                    zipf.write(file_path, arcname)
-        print(f"Created zip archive: {zip_path}")
+        try:
+            import zipfile
+            zip_path = os.path.join(dist_dir, f"{app_name}_v{config['version']}_win.zip")
+            with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+                if os.path.exists(app_dir):
+                    for root, _, files in os.walk(app_dir):
+                        for file in files:
+                            file_path = os.path.join(root, file)
+                            arcname = os.path.relpath(file_path, dist_dir)
+                            zipf.write(file_path, arcname)
+                    print(f"Created zip archive: {zip_path}")
+                else:
+                    print(f"Warning: Could not create zip archive because {app_dir} does not exist")
+        except Exception as e:
+            print(f"Warning: Could not create zip archive: {str(e)}")
     
     # For Linux, create a tar.gz file
     elif platform_name == "linux":
-        import tarfile
-        tar_path = os.path.join(dist_dir, f"{app_name}_v{config['version']}_linux.tar.gz")
-        with tarfile.open(tar_path, "w:gz") as tar:
-            tar.add(app_dir, arcname=app_name)
-        print(f"Created tar.gz archive: {tar_path}")
+        try:
+            import tarfile
+            tar_path = os.path.join(dist_dir, f"{app_name}_v{config['version']}_linux.tar.gz")
+            with tarfile.open(tar_path, "w:gz") as tar:
+                if os.path.exists(app_dir):
+                    tar.add(app_dir, arcname=app_name)
+                    print(f"Created tar.gz archive: {tar_path}")
+                else:
+                    print(f"Warning: Could not create tar.gz archive because {app_dir} does not exist")
+        except Exception as e:
+            print(f"Warning: Could not create tar.gz archive: {str(e)}")
     
     print(f"Build completed successfully for {platform_name}")
     return True
 
 def install_requirements():
     """Install required packages"""
+    print("Checking and installing required packages...")
+    
+    # Ensure pip is up to date
+    try:
+        subprocess.run([sys.executable, "-m", "pip", "install", "--upgrade", "pip"], check=False)
+    except Exception as e:
+        print(f"Warning: Could not upgrade pip: {str(e)}")
+    
+    # First, try to install from local requirements
     requirements_path = os.path.join(os.path.dirname(__file__), "requirements.txt")
     if os.path.exists(requirements_path):
-        subprocess.run([sys.executable, "-m", "pip", "install", "-r", requirements_path], check=True)
+        print(f"Installing requirements from {requirements_path}")
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", "-r", requirements_path], check=True)
+        except Exception as e:
+            print(f"Error installing from requirements.txt: {str(e)}")
+            print("Installing essential packages individually...")
+            try:
+                subprocess.run([sys.executable, "-m", "pip", "install", "PyInstaller"], check=True)
+                subprocess.run([sys.executable, "-m", "pip", "install", "Pillow"], check=True)
+            except Exception as e2:
+                print(f"Error installing individual packages: {str(e2)}")
+                raise
     else:
-        subprocess.run([sys.executable, "-m", "pip", "install", "PyInstaller", "PyQt5"], check=True)
+        print("No requirements.txt found, installing essential packages...")
+        try:
+            subprocess.run([sys.executable, "-m", "pip", "install", "PyInstaller"], check=True)
+            subprocess.run([sys.executable, "-m", "pip", "install", "PyQt5"], check=True)
+            subprocess.run([sys.executable, "-m", "pip", "install", "Pillow"], check=True)
+        except Exception as e:
+            print(f"Error installing essential packages: {str(e)}")
+            raise
+    
+    # Verify PyInstaller is installed
+    try:
+        subprocess.run([sys.executable, "-c", "import PyInstaller"], check=True)
+        print("PyInstaller is properly installed.")
+    except Exception:
+        print("Warning: PyInstaller not properly installed. Will try again during build.")
 
 def main():
     parser = argparse.ArgumentParser(description="Build Signal Manager GUI executable")

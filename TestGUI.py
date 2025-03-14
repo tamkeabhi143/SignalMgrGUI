@@ -129,6 +129,69 @@ class Ui_MainWindow(object):
         self.SOCList.setObjectName("SOCList")
         self.SOCList.addItem("")
         self.tabWidget.addTab(self.tab, "")
+        
+        # Add a new tab for Advanced Settings
+        self.tab_3 = QtWidgets.QWidget()
+        self.tab_3.setObjectName("tab_3")
+        
+        # Add a frame to contain controls
+        self.advanced_frame = QtWidgets.QFrame(self.tab_3)
+        self.advanced_frame.setGeometry(QtCore.QRect(10, 20, 1021, 241))
+        self.advanced_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.advanced_frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.advanced_frame.setObjectName("advanced_frame")
+        
+        # Add a label
+        self.label_advanced = QtWidgets.QLabel(self.advanced_frame)
+        self.label_advanced.setGeometry(QtCore.QRect(10, 10, 200, 17))
+        self.label_advanced.setObjectName("label_advanced")
+        
+        # Add a treeview for advanced settings
+        self.advanced_tree = QtWidgets.QTreeWidget(self.advanced_frame)
+        self.advanced_tree.setGeometry(QtCore.QRect(10, 40, 500, 180))
+        self.advanced_tree.setObjectName("advanced_tree")
+        
+        # Add the tab to the tabWidget
+        self.tabWidget.addTab(self.tab_3, "")
+        
+        # Add a new tab for Debug Tools
+        self.tab_4 = QtWidgets.QWidget()
+        self.tab_4.setObjectName("tab_4")
+        
+        # Add a frame to contain debug controls
+        self.debug_frame = QtWidgets.QFrame(self.tab_4)
+        self.debug_frame.setGeometry(QtCore.QRect(10, 20, 1021, 800))
+        self.debug_frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
+        self.debug_frame.setFrameShadow(QtWidgets.QFrame.Raised)
+        self.debug_frame.setObjectName("debug_frame")
+        
+        # Add a label
+        self.label_debug = QtWidgets.QLabel(self.debug_frame)
+        self.label_debug.setGeometry(QtCore.QRect(10, 10, 200, 17))
+        self.label_debug.setObjectName("label_debug")
+        
+        # Add a text area for logs
+        self.debug_log = QtWidgets.QPlainTextEdit(self.debug_frame)
+        self.debug_log.setGeometry(QtCore.QRect(10, 40, 800, 400))
+        self.debug_log.setReadOnly(True)
+        self.debug_log.setObjectName("debug_log")
+        
+        # Add debug control buttons
+        self.debug_start_button = QtWidgets.QPushButton(self.debug_frame)
+        self.debug_start_button.setGeometry(QtCore.QRect(10, 460, 150, 30))
+        self.debug_start_button.setObjectName("debug_start_button")
+        
+        self.debug_stop_button = QtWidgets.QPushButton(self.debug_frame)
+        self.debug_stop_button.setGeometry(QtCore.QRect(170, 460, 150, 30))
+        self.debug_stop_button.setObjectName("debug_stop_button")
+        
+        self.debug_clear_button = QtWidgets.QPushButton(self.debug_frame)
+        self.debug_clear_button.setGeometry(QtCore.QRect(330, 460, 150, 30))
+        self.debug_clear_button.setObjectName("debug_clear_button")
+        
+        # Add the tab to the tabWidget
+        self.tabWidget.addTab(self.tab_4, "")
+        
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1086, 22))
@@ -248,6 +311,14 @@ class Ui_MainWindow(object):
         self.BuildImageType.setItemText(0, _translate("MainWindow", "Select Build Type"))
         self.SOCList.setItemText(0, _translate("MainWindow", "Select SOC"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("MainWindow", "Signal Configuration"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Advanced Settings"))
+        self.label_advanced.setText(_translate("MainWindow", "Advanced Configuration Options"))
+        self.advanced_tree.headerItem().setText(0, _translate("MainWindow", "Settings"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Debug Tools"))
+        self.label_debug.setText(_translate("MainWindow", "Debug & Diagnostics"))
+        self.debug_start_button.setText(_translate("MainWindow", "Start Debug"))
+        self.debug_stop_button.setText(_translate("MainWindow", "Stop Debug"))
+        self.debug_clear_button.setText(_translate("MainWindow", "Clear Logs"))
         self.menuFile.setTitle(_translate("MainWindow", "File"))
         self.menuDataBase.setTitle(_translate("MainWindow", "DataBase"))
         self.menuCodeGeneration.setTitle(_translate("MainWindow", "CodeGeneration"))

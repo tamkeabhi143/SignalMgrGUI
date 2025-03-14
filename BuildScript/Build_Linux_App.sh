@@ -11,10 +11,26 @@ fi
 
 # Install required packages
 echo "Installing required packages..."
+python3 -m pip install --upgrade pip
+
 if [ -f "requirements.txt" ]; then
+    echo "Installing from requirements.txt"
     python3 -m pip install -r requirements.txt
+    if [ $? -ne 0 ]; then
+        echo "Error installing from requirements.txt. Installing essential packages individually..."
+        python3 -m pip install PyInstaller
+        python3 -m pip install Pillow
+    fi
 else
+    echo "Installing essential packages"
     python3 -m pip install PyInstaller Pillow
+fi
+
+# Verify PyInstaller is installed
+python3 -c "import PyInstaller" &> /dev/null
+if [ $? -ne 0 ]; then
+    echo "Warning: PyInstaller module not accessible. Retrying installation..."
+    python3 -m pip install --force-reinstall PyInstaller
 fi
 
 # Create build directory if it doesn't exist

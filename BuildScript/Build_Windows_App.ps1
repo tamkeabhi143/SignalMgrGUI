@@ -20,10 +20,24 @@ try {
     Write-Host "PyInstaller is installed" -ForegroundColor Green
 } catch {
     Write-Host "PyInstaller is not installed. Installing..." -ForegroundColor Yellow
+    python -m pip install --upgrade pip
     python -m pip install PyInstaller
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "Failed to install PyInstaller" -ForegroundColor Red
-        exit 1
+    
+    # Verify installation was successful
+    try {
+        python -c "import PyInstaller" -ErrorAction Stop
+        Write-Host "PyInstaller installed successfully" -ForegroundColor Green
+    } catch {
+        Write-Host "PyInstaller installation failed. Trying force reinstall..." -ForegroundColor Red
+        python -m pip install --force-reinstall PyInstaller
+        
+        # Final verification
+        try {
+            python -c "import PyInstaller" -ErrorAction Stop
+            Write-Host "PyInstaller force reinstall successful" -ForegroundColor Green
+        } catch {
+            Write-Host "PyInstaller installation failed even with force reinstall. Build may fail." -ForegroundColor Red
+        }
     }
 }
 

@@ -11,10 +11,20 @@ if %ERRORLEVEL% neq 0 (
 
 :: Install required packages
 echo Installing required packages...
+python -m pip install --upgrade pip
 if exist "requirements.txt" (
+    echo Installing from requirements.txt
     python -m pip install -r requirements.txt
 ) else (
+    echo Installing essential packages
     python -m pip install PyInstaller Pillow
+)
+
+:: Verify PyInstaller is installed
+python -c "import PyInstaller" >nul 2>&1
+if %ERRORLEVEL% neq 0 (
+    echo Warning: PyInstaller module not accessible. Retrying installation...
+    python -m pip install --force-reinstall PyInstaller
 )
 
 :: Create build directory if it doesn't exist
