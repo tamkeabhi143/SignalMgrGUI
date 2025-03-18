@@ -1,0 +1,779 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>SignalDetailsDialog</class>
+ <widget class="QDialog" name="SignalDetailsDialog">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Signal Details</string>
+  </property>
+  <layout class="QVBoxLayout" name="main_layout">
+   <item>
+    <widget class="QTabWidget" name="tab_widget">
+     <property name="currentIndex">
+      <number>0</number>
+     </property>
+     <widget class="QWidget" name="basic_tab">
+      <attribute name="title">
+       <string>Basic Properties</string>
+      </attribute>
+      <widget class="QLabel" name="signal_name_label_text">
+       <property name="geometry">
+        <rect>
+         <x>9</x>
+         <y>9</y>
+         <width>70</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Signal Name:</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="signal_name_label">
+       <property name="geometry">
+        <rect>
+         <x>119</x>
+         <y>9</y>
+         <width>66</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="font">
+        <font>
+         <bold>true</bold>
+        </font>
+       </property>
+       <property name="text">
+        <string>SignalName</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="var_port_name_label">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>40</y>
+         <width>104</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Variable Port Name:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="variable_port_name_edit">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>40</y>
+         <width>116</width>
+         <height>22</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="data_type_label">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>68</y>
+         <width>55</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Data Type:</string>
+       </property>
+      </widget>
+      <widget class="QComboBox" name="data_type_combo">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>68</y>
+         <width>79</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <property name="editable">
+        <bool>true</bool>
+       </property>
+       <item>
+        <property name="text">
+         <string>INT8</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>UINT8</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>INT16</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>UINT16</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>INT32</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>UINT32</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>INT64</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>UINT64</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>FLOAT32</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>FLOAT64</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>BOOLEAN</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>CHAR</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>STRING</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>STRUCT</string>
+        </property>
+       </item>
+      </widget>
+      <widget class="QGroupBox" name="struct_group">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>100</width>
+         <height>30</height>
+        </rect>
+       </property>
+       <property name="visible">
+        <bool>false</bool>
+       </property>
+       <property name="title">
+        <string>Structure Definition</string>
+       </property>
+       <layout class="QVBoxLayout" name="struct_layout">
+        <item>
+         <widget class="QLabel" name="struct_fields_label">
+          <property name="text">
+           <string>Structure Fields:</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QTreeWidget" name="struct_fields_tree">
+          <property name="columnCount">
+           <number>3</number>
+          </property>
+          <column>
+           <property name="text">
+            <string>Field Name</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Data Type</string>
+           </property>
+          </column>
+          <column>
+           <property name="text">
+            <string>Description</string>
+           </property>
+          </column>
+         </widget>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="field_buttons_layout">
+          <item>
+           <widget class="QPushButton" name="add_field_button">
+            <property name="text">
+             <string>Add Field</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="edit_field_button">
+            <property name="text">
+             <string>Edit Field</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="remove_field_button">
+            <property name="text">
+             <string>Remove Field</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+      <widget class="QLabel" name="description_label">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>96</y>
+         <width>63</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Description:</string>
+       </property>
+      </widget>
+      <widget class="QLineEdit" name="description_edit">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>96</y>
+         <width>116</width>
+         <height>22</height>
+        </rect>
+       </property>
+      </widget>
+      <widget class="QLabel" name="memory_region_label">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>124</y>
+         <width>88</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Memory Region:</string>
+       </property>
+      </widget>
+      <widget class="QComboBox" name="memory_region_combo">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>124</y>
+         <width>88</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <item>
+        <property name="text">
+         <string>DDR</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Cached</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>NonCached</string>
+        </property>
+       </item>
+      </widget>
+      <widget class="QLabel" name="type_label">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>152</y>
+         <width>28</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Type:</string>
+       </property>
+      </widget>
+      <widget class="QComboBox" name="type_combo">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>152</y>
+         <width>86</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <item>
+        <property name="text">
+         <string>Concurrent</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Sequential</string>
+        </property>
+       </item>
+      </widget>
+      <widget class="QLabel" name="init_value_label">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>180</y>
+         <width>51</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>Init Value:</string>
+       </property>
+      </widget>
+      <widget class="QComboBox" name="init_value_combo">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>180</y>
+         <width>96</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <item>
+        <property name="text">
+         <string>ZeroMemory</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Custom</string>
+        </property>
+       </item>
+      </widget>
+      <widget class="QPushButton" name="custom_value_button">
+       <property name="geometry">
+        <rect>
+         <x>0</x>
+         <y>0</y>
+         <width>100</width>
+         <height>30</height>
+        </rect>
+       </property>
+       <property name="visible">
+        <bool>false</bool>
+       </property>
+       <property name="text">
+        <string>Enter Custom Value...</string>
+       </property>
+      </widget>
+      <widget class="QLabel" name="asil_label">
+       <property name="geometry">
+        <rect>
+         <x>10</x>
+         <y>214</y>
+         <width>26</width>
+         <height>16</height>
+        </rect>
+       </property>
+       <property name="text">
+        <string>ASIL:</string>
+       </property>
+      </widget>
+      <widget class="QComboBox" name="asil_combo">
+       <property name="geometry">
+        <rect>
+         <x>120</x>
+         <y>214</y>
+         <width>45</width>
+         <height>22</height>
+        </rect>
+       </property>
+       <item>
+        <property name="text">
+         <string>QM</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>A</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>B</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>C</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>D</string>
+        </property>
+       </item>
+      </widget>
+     </widget>
+     <widget class="QWidget" name="advanced_tab">
+      <attribute name="title">
+       <string>Advanced Properties</string>
+      </attribute>
+      <layout class="QFormLayout" name="advanced_form_layout">
+       <item row="0" column="0">
+        <widget class="QLabel" name="buffer_count_ipc_label">
+         <property name="text">
+          <string>Buffer Count IPC:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="1">
+        <widget class="QSpinBox" name="buffer_count_ipc_spin">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10</number>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0">
+        <widget class="QLabel" name="impl_approach_label">
+         <property name="text">
+          <string>Implementation Approach:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QComboBox" name="impl_approach_combo">
+         <item>
+          <property name="text">
+           <string>SharedMemory</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>VRING</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>IpcOvEth</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="get_obj_ref_label">
+         <property name="text">
+          <string>Get Object Reference:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QComboBox" name="get_obj_ref_combo">
+         <item>
+          <property name="text">
+           <string>False</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>True</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="notifiers_label">
+         <property name="text">
+          <string>Notifiers:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QComboBox" name="notifiers_combo">
+         <item>
+          <property name="text">
+           <string>False</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>True</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="sm_buff_count_label">
+         <property name="text">
+          <string>SM Buffer Count:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="1">
+        <widget class="QSpinBox" name="sm_buff_count_spin">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10</number>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="timeout_label">
+         <property name="text">
+          <string>Timeout:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="1">
+        <widget class="QSpinBox" name="timeout_spin">
+         <property name="suffix">
+          <string> ms</string>
+         </property>
+         <property name="minimum">
+          <number>10</number>
+         </property>
+         <property name="maximum">
+          <number>200</number>
+         </property>
+         <property name="singleStep">
+          <number>10</number>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="periodicity_label">
+         <property name="text">
+          <string>Periodicity:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="1">
+        <widget class="QSpinBox" name="periodicity_spin">
+         <property name="suffix">
+          <string> ms</string>
+         </property>
+         <property name="minimum">
+          <number>10</number>
+         </property>
+         <property name="maximum">
+          <number>200</number>
+         </property>
+         <property name="singleStep">
+          <number>10</number>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="0">
+        <widget class="QLabel" name="checksum_label">
+         <property name="text">
+          <string>Checksum:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
+        <widget class="QComboBox" name="checksum_combo">
+         <item>
+          <property name="text">
+           <string>None</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>Additive</string>
+          </property>
+         </item>
+         <item>
+          <property name="text">
+           <string>CustomChecksum</string>
+          </property>
+         </item>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="routing_tab">
+      <attribute name="title">
+       <string>Core Routing</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
+        <widget class="QScrollArea" name="core_scroll_area">
+         <property name="widgetResizable">
+          <bool>true</bool>
+         </property>
+         <widget class="QWidget" name="scroll_content">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>556</width>
+            <height>501</height>
+           </rect>
+          </property>
+          <layout class="QVBoxLayout" name="scroll_layout">
+           <item>
+            <widget class="QGroupBox" name="source_group">
+             <property name="title">
+              <string>Source Core</string>
+             </property>
+             <layout class="QVBoxLayout" name="source_layout">
+              <item>
+               <widget class="QComboBox" name="source_combo">
+                <item>
+                 <property name="text">
+                  <string>&lt;None&gt;</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+             </layout>
+            </widget>
+           </item>
+           <item>
+            <widget class="QGroupBox" name="dest_group">
+             <property name="title">
+              <string>Destination Cores</string>
+             </property>
+             <layout class="QVBoxLayout" name="dest_layout"/>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="button_layout">
+     <item>
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Orientation::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="ok_button">
+       <property name="text">
+        <string>OK</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="cancel_button">
+       <property name="text">
+        <string>Cancel</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections>
+  <connection>
+   <sender>cancel_button</sender>
+   <signal>clicked()</signal>
+   <receiver>SignalDetailsDialog</receiver>
+   <slot>reject()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>550</x>
+     <y>580</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>300</x>
+     <y>300</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>ok_button</sender>
+   <signal>clicked()</signal>
+   <receiver>SignalDetailsDialog</receiver>
+   <slot>accept()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>480</x>
+     <y>580</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>300</x>
+     <y>300</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>data_type_combo</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>SignalDetailsDialog</receiver>
+   <slot>onDataTypeChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>159</x>
+     <y>79</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>300</x>
+     <y>300</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>init_value_combo</sender>
+   <signal>currentTextChanged(QString)</signal>
+   <receiver>SignalDetailsDialog</receiver>
+   <slot>onInitValueChanged(QString)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>168</x>
+     <y>191</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>300</x>
+     <y>300</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
+ <slots>
+  <slot>onDataTypeChanged(QString)</slot>
+  <slot>onInitValueChanged(QString)</slot>
+ </slots>
+</ui>

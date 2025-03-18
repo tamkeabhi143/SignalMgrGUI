@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/new/prefix1">
+        <file>Icons/add.png</file>
+        <file>Icons/Close.png</file>
+        <file>Icons/ExportToExcel.png</file>
+        <file>Icons/Import.png</file>
+        <file>Icons/NewFile.png</file>
+        <file>Icons/OpenFile.png</file>
+        <file>Icons/Redo.png</file>
+        <file>Icons/Save.png</file>
+        <file>Icons/SaveAs.png</file>
+        <file>Icons/Undo.png</file>
+        <file>Icons/AddEntry.png</file>
+        <file>Icons/RemoveEntry.png</file>
+        <file>Icons/UpdateEntry.png</file>
+    </qresource>
+</RCC>
