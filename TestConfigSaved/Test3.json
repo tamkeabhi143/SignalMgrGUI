@@ -1,0 +1,216 @@
+{
+    "metadata": {
+        "version": "1.13",
+        "date": "2025-03-20",
+        "editor": "Abhijit",
+        "description": "Index Field added"
+    },
+    "soc_type": "Aurix",
+    "build_type": "MultiImage",
+    "soc_list": [
+        "Aurix",
+        "Windows"
+    ],
+    "build_list": [
+        "MultiImage"
+    ],
+    "core_info": {
+        "Aurix": {
+            "Core0": {
+                "description": "",
+                "is_autosar": true,
+                "is_master": true,
+                "is_qnx": false,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            },
+            "Core1": {
+                "description": "",
+                "is_autosar": true,
+                "is_master": false,
+                "is_qnx": false,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            },
+            "Core2": {
+                "description": "",
+                "is_autosar": true,
+                "is_master": false,
+                "is_qnx": false,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            },
+            "Core3": {
+                "description": "",
+                "is_autosar": true,
+                "is_master": false,
+                "is_qnx": false,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            },
+            "Core4": {
+                "description": "",
+                "is_autosar": true,
+                "is_master": false,
+                "is_qnx": false,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            },
+            "Core5": {
+                "description": "",
+                "is_autosar": true,
+                "is_master": false,
+                "is_qnx": false,
+                "is_sim": false,
+                "os": "AUTOSAR",
+                "soc_family": "Tricore"
+            }
+        }
+    },
+    "signals": {
+        "TestDataV1": {
+            "Variable_Port_Name": "TestDataV1",
+            "Memory Region": "DDR",
+            "Type": "Concurrent",
+            "InitValue": "ZeroMemory",
+            "Notifiers": false,
+            "Source": "Aurix.Core0",
+            "Impl_Approach": "SharedMemory",
+            "GetObjRef": false,
+            "Buffer count_IPC": 1,
+            "SM_Buff_Count": 3,
+            "Timeout": 10,
+            "Periodicity": 10,
+            "ASIL": "QM",
+            "Checksum": "Additive",
+            "DataType": "STRUCT",
+            "description": "New signal",
+            "is_struct": true,
+            "struct_fields": {
+                "flag_b": {
+                    "type": "bool_t",
+                    "description": ""
+                },
+                "data_u8": {
+                    "type": "Array[uint8][10]",
+                    "description": ""
+                }
+            },
+            "core_Aurix_Core0": false,
+            "core_Aurix_Core1": true,
+            "core_Aurix_Core2": true,
+            "core_Aurix_Core3": true,
+            "core_Aurix_Core4": true,
+            "core_Aurix_Core5": true
+        },
+        "TestDataV2": {
+            "Variable_Port_Name": "TestDataV2",
+            "Memory Region": "DDR",
+            "Type": "Concurrent",
+            "InitValue": "ZeroMemory",
+            "Notifiers": false,
+            "Source": "Aurix.Core1",
+            "Impl_Approach": "SharedMemory",
+            "GetObjRef": false,
+            "Buffer count_IPC": 1,
+            "SM_Buff_Count": 1,
+            "Timeout": 10,
+            "Periodicity": 10,
+            "ASIL": "QM",
+            "Checksum": "Additive",
+            "DataType": "STRUCT",
+            "description": "New signal",
+            "is_struct": true,
+            "struct_fields": {
+                "flag_b": {
+                    "type": "bool_t",
+                    "description": ""
+                },
+                "data_u8": {
+                    "type": "Array[uint8][10]",
+                    "description": ""
+                }
+            },
+            "core_Aurix_Core0": true,
+            "core_Aurix_Core1": false,
+            "core_Aurix_Core2": true,
+            "core_Aurix_Core3": true,
+            "core_Aurix_Core4": true,
+            "core_Aurix_Core5": true
+        }
+    },
+    "project_specific": {
+        "paths": {
+            "output_path": "/path/to/output",
+            "script_path": "/path/to/scripts"
+        },
+        "api_config": {
+            "smp": {
+                "spinlock_api": "Spinlock_Take",
+                "spinunlock_api": "Spinlock_Release",
+                "spinlock_header": "spinlock.h",
+                "semaphore_lock_api": "Semaphore_Take",
+                "semaphore_unlock_api": "Semaphore_Release",
+                "semaphore_header": "semaphore.h",
+                "get_core_id_api": "GetCoreID",
+                "get_core_id_header": "core_utils.h"
+            },
+            "multicore": {
+                "Aurix_Core0": {
+                    "spinlock_api": "Core0_Spinlock_Take",
+                    "spinunlock_api": "Core0_Spinlock_Release",
+                    "spinlock_header": "core0_spinlock.h",
+                    "semaphore_lock_api": "Core0_Semaphore_Take",
+                    "semaphore_unlock_api": "Core0_Semaphore_Release",
+                    "semaphore_header": "core0_semaphore.h"
+                },
+                "Aurix_Core1": {
+                    "spinlock_api": "Core1_Spinlock_Take",
+                    "spinunlock_api": "Core1_Spinlock_Release",
+                    "spinlock_header": "core1_spinlock.h",
+                    "semaphore_lock_api": "Core1_Semaphore_Take",
+                    "semaphore_unlock_api": "Core1_Semaphore_Release",
+                    "semaphore_header": "core1_semaphore.h"
+                  },
+                  "Aurix_Core2": {
+                    "spinlock_api": "Core2_Spinlock_Take",
+                    "spinunlock_api": "Core2_Spinlock_Release",
+                    "spinlock_header": "core2_spinlock.h",
+                    "semaphore_lock_api": "Core2_Semaphore_Take",
+                    "semaphore_unlock_api": "Core2_Semaphore_Release",
+                    "semaphore_header": "core2_semaphore.h"
+                  },
+                  "Aurix_Core3": {
+                    "spinlock_api": "Core3_Spinlock_Take",
+                    "spinunlock_api": "Core3_Spinlock_Release",
+                    "spinlock_header": "core3_spinlock.h",
+                    "semaphore_lock_api": "Core3_Semaphore_Take",
+                    "semaphore_unlock_api": "Core3_Semaphore_Release",
+                    "semaphore_header": "core3_semaphore.h"
+                  },
+                  "Aurix_Core4": {
+                    "spinlock_api": "Core4_Spinlock_Take",
+                    "spinunlock_api": "Core4_Spinlock_Release",
+                    "spinlock_header": "core4_spinlock.h",
+                    "semaphore_lock_api": "Core4_Semaphore_Take",
+                    "semaphore_unlock_api": "Core4_Semaphore_Release",
+                    "semaphore_header": "core4_semaphore.h"
+                  },
+                  "Aurix_Core5": {
+                    "spinlock_api": "Core5_Spinlock_Take",
+                    "spinunlock_api": "Core5_Spinlock_Release",
+                    "spinlock_header": "core5_spinlock.h",
+                    "semaphore_lock_api": "Core5_Semaphore_Take",
+                    "semaphore_unlock_api": "Core5_Semaphore_Release",
+                    "semaphore_header": "core5_semaphore.h"
+                  }
+            }
+        }
+    },
+    "export_sheet_name": "Config"
+}

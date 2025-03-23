@@ -1,6 +1,7 @@
 from PyQt5.QtWidgets import QMessageBox, QInputDialog, QTreeWidgetItem
 from Modules.SignalDetailsDialog import SignalDetailsDialog
 from Modules.ConfigMgrDialog import ConfigManagerDialog
+import copy
 
 class SignalOperations:
     def __init__(self, app):
@@ -12,55 +13,72 @@ class SignalOperations:
             if signal_name in self.app.signals_data.get("signals", {}):
                 QMessageBox.warning(self.app, "Warning", f"Signal '{signal_name}' already exists")
                 return
+
+        # Create a temporary signal configuration with default properties
+        # This isn't added to the main data structure yet
+        temp_signal_properties = {
+            "Variable_Port_Name": signal_name,
+            "Memory Region": "DDR",
+            "Buffer count_IPC": 1,
+            "Type": "Concurrent",
+            "InitValue": "ZeroMemory",
+            "Notifiers": False,
+            "Source": "",  # This will be populated from core list
+            "Impl_Approach": "SharedMemory",
+            "GetObjRef": False,
+            "SM_Buff_Count": 1,
+            "Timeout": 10,
+            "Periodicity": 10,
+            "ASIL": "QM",
+            "Checksum": "Additive",
+            "DataType": "INT32",
+            "description": "New signal",
+            "is_struct": False,
+            "struct_fields": {}
+        }
+
+        # Get available cores for source selection
+        available_cores = self.app.ui_helpers.get_available_cores()
+
+        # Create and show the signal details dialog with the temporary configuration
+        dialog = SignalDetailsDialog(self.app, signal_name, temp_signal_properties, available_cores)
+
+        if dialog.exec_():
             # Save current state for undo
             self.app.ui_helpers.save_undo_state()
+
             # Initialize signals dict if not exists
             if "signals" not in self.app.signals_data:
                 self.app.signals_data["signals"] = {}
-            # Add new signal with default properties
-            self.app.signals_data["signals"][signal_name] = {
-                "Variable_Port_Name": signal_name,
-                "Memory Region": "DDR",
-                "Buffer count_IPC": 1,
-                "Type": "Concurrent",
-                "InitValue": "ZeroMemory",
-                "Notifiers": False,
-                "Source": "",  # This will be populated from core list
-                "Impl_Approach": "SharedMemory",
-                "GetObjRef": False,
-                "SM_Buff_Count": 1,
-                "Timeout": 10,
-                "Periodicity": 10,
-                "ASIL": "QM",
-                "Checksum": "Additive",
-                "DataType": "INT32",
-                "description": "New signal",
-                "is_struct": False,  # Added for structure type support
-                "struct_fields": {}  # For storing fields if it's a structure
-            }
-            # Open the signal details dialog for further configuration
-            self.edit_signal_details(signal_name)
-            
+
+            # Add the signal with the properties from the dialog
+            self.app.signals_data["signals"][signal_name] = dialog.get_signal_properties()
+
             self.app.modified = True
             self.app.ui_helpers.update_window_title()
             self.app.ui_helpers.refresh_signal_tree()
             # Select the newly added signal to show its details
-            for i in range(self.app.ui_helpers.signal_tree.topLevelItemCount()):
-                item = self.app.ui_helpers.signal_tree.topLevelItem(i)
-                if item.text(0) == signal_name:
-                    self.app.ui_helpers.signal_tree.setCurrentItem(item)
+
+            for i in range(self.app.ui_helpers.signal_tree.rowCount()):
+                item = self.app.ui_helpers.signal_tree.item(i, 0)  # Assuming signal names are in first column
+                if item and item.text() == signal_name:
+                    self.app.ui_helpers.signal_tree.selectRow(i)
                     # Force display of signal details
                     self.app.ui_helpers.display_signal_details(signal_name, self.app.signals_data["signals"][signal_name])
                     break
             # After successfully adding a signal, update the count
             self.app.ui_helpers.update_signal_count_display()
+        else:
+            # If user canceled, remove the temporary signal
+            if signal_name in self.app.signals_data.get("signals", {}):
+                del self.app.signals_data["signals"][signal_name]
 
     def delete_signal(self):
         if not self.app.ui_helpers.signal_tree.currentItem():
             QMessageBox.warning(self.app, "Warning", "No signal selected")
             return
         signal_name = self.app.ui_helpers.signal_tree.currentItem().text(0)
-        reply = QMessageBox.question(self.app, "Confirm Delete", 
+        reply = QMessageBox.question(self.app, "Confirm Delete",
                                     f"Are you sure you want to delete signal '{signal_name}'?",
                                     QMessageBox.Yes | QMessageBox.No)
         if reply == QMessageBox.Yes:
@@ -88,7 +106,7 @@ class SignalOperations:
             QMessageBox.warning(self.app, "Warning", "No signal selected")
             return
         old_name = self.app.ui_helpers.signal_tree.currentItem().text(0)
-        new_name, ok = QInputDialog.getText(self.app, "Rename Signal", 
+        new_name, ok = QInputDialog.getText(self.app, "Rename Signal",
                                                      "Enter new signal name:", text=old_name)
         if ok and new_name and new_name != old_name:
             if new_name in self.app.signals_data.get("signals", {}):
@@ -113,8 +131,16 @@ class SignalOperations:
         if "signals" in self.app.signals_data and signal_name in self.app.signals_data["signals"]:
             self.app.copied_signal = {
                 "name": signal_name,
-                "properties": self.app.signals_data["signals"][signal_name].copy()
+                "properties": copy.deepcopy(self.app.signals_data["signals"][signal_name])
             }
+
+            # Enable paste action after copying
+            if hasattr(self.app, 'paste_action'):
+                self.app.paste_action.setEnabled(True)
+            elif hasattr(self.app.ui, 'actionPaste_Entry'):
+                self.app.ui.actionPaste_Entry.setEnabled(True)
+            elif hasattr(self.app.ui, 'actionPaste_Signal'):
+                self.app.ui.actionPaste_Signal.setEnabled(True)
             QMessageBox.information(self.app, "Success", f"Signal '{signal_name}' copied")
 
     def paste_signal(self):
@@ -141,6 +167,39 @@ class SignalOperations:
         QMessageBox.information(self.app, "Success", f"Signal pasted as '{new_name}'")
         # After pasting a signal, update the count
         self.app.ui_helpers.update_signal_count_display()
+
+    def cut_signal(self):
+        if not self.app.ui_helpers.signal_tree.currentItem():
+            QMessageBox.warning(self.app, "Warning", "No signal selected")
+            return
+        signal_name = self.app.ui_helpers.signal_tree.currentItem().text(0)
+        if "signals" in self.app.signals_data and signal_name in self.app.signals_data["signals"]:
+            # Save current state for undo
+            self.app.ui_helpers.save_undo_state()
+
+            # Copy the signal first
+            self.app.copied_signal = {
+                "name": signal_name,
+                "properties": copy.deepcopy(self.app.signals_data["signals"][signal_name])
+            }
+
+            # Then delete the signal
+            del self.app.signals_data["signals"][signal_name]
+            self.app.modified = True
+            self.app.ui_helpers.update_window_title()
+            self.app.ui_helpers.refresh_signal_tree()
+
+            # Enable paste action after cutting
+            if hasattr(self.app, 'paste_action'):
+                self.app.paste_action.setEnabled(True)
+            elif hasattr(self.app.ui, 'actionPaste_Entry'):
+                self.app.ui.actionPaste_Entry.setEnabled(True)
+            elif hasattr(self.app.ui, 'actionPaste_Signal'):
+                self.app.ui.actionPaste_Signal.setEnabled(True)
+
+            QMessageBox.information(self.app, "Success", f"Signal '{signal_name}' cut")
+            # Update the signal count
+            self.app.ui_helpers.update_signal_count_display()
 
     def edit_signal_details(self, signal_name):
         if "signals" in self.app.signals_data and signal_name in self.app.signals_data["signals"]:
@@ -184,7 +243,7 @@ class SignalOperations:
             self.app.current_file = None
             self.app.modified = True
             self.app.ui_helpers.update_window_title()
-        
+
         # Show the configuration manager dialog
         if config_dialog.exec_():
             # If user clicked OK, update the configuration
@@ -201,7 +260,7 @@ class SignalOperations:
         """Load configuration data into the UI"""
         # Get the CoreInfo_2 widget and check if it's a QScrollArea
         core_info_widget = getattr(self.app.ui, "CoreInfo_2", None)
-        
+
         if core_info_widget and isinstance(core_info_widget, QtWidgets.QScrollArea):
             # For the new UI with scroll area
             if hasattr(self.app.ui, 'coreInfoContents') and hasattr(self.app.ui, 'coreInfoLayout'):
@@ -210,34 +269,34 @@ class SignalOperations:
                     item = self.app.ui.coreInfoLayout.takeAt(0)
                     if item.widget():
                         item.widget().deleteLater()
-                
+
                 # Create a tree widget to add to the scroll area
                 tree = QtWidgets.QTreeWidget()
                 tree.setHeaderLabels(["Core Details"])
                 self.app.ui.coreInfoLayout.addWidget(tree)
-                
+
                 # Now populate the tree
                 if "core_info" in config_data:
                     core_info = config_data["core_info"]
-                    
+
                     for soc_name, cores in core_info.items():
                         for core_name, core_data in cores.items():
                             # Create core item directly under root (not under SOC)
                             core_item = QTreeWidgetItem(tree)
                             core_item.setText(0, f"Core: {core_name}")
-                            
+
                             # Add properties based on data type
                             if isinstance(core_data, dict):
                                 # Show core properties for dictionary format
                                 role_str = "Master" if core_data.get("is_master", False) else "Slave"
                                 role_item = QTreeWidgetItem(core_item)
                                 role_item.setText(0, f"Role: {role_str}")
-                                
+
                                 # OS info
                                 os_str = str(core_data.get("os", "Unknown"))
                                 os_item = QTreeWidgetItem(core_item)
                                 os_item.setText(0, f"OS: {os_str}")
-                                
+
                                 # Boolean properties
                                 for prop_name, display_name in [
                                     ("is_qnx", "QNX Core"),
@@ -251,8 +310,8 @@ class SignalOperations:
                                 # If it's just a string or other scalar value
                                 desc_item = QTreeWidgetItem(core_item)
                                 desc_item.setText(0, str(core_data))
-                    
+
                     tree.expandAll()
-        
+
         # Update the other parts of the UI as needed
         # ... existing code...

@@ -137,4 +137,4 @@ If you encounter an error with PyInstaller command arguments, ensure you're usin
 
 ## License
 
-[Add license information here] 
+[Add license information here]

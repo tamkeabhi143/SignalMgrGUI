@@ -1,0 +1,258 @@
+/********************************************************************************************************
+----------------------------------------------- Initialize ----------------------------------------------
+********************************************************************************************************/
+main()
+└── SignalMgrApp.__init__() 
+    ├── _preload_menu_resources()                # Load menu icons
+    ├── _setup_menus_directly()                  # Build menus
+    │   └── _cache_original_actions()            # Store existing actions
+    ├── _map_ui_elements()                       # Map UI element names for compatibility
+    ├── create_board_select_dropdown()           # Create UI elements
+    ├── Initialize modules:
+    │   ├── FileOperations(self)                 # File handling
+    │   ├── SignalOperations(self)               # Signal operations
+    │   ├── CodeGeneration(self)                 # Code generation
+    │   └── UIHelpers(self)                      # UI management
+    ├── setup_connections()                      # Connect UI to handlers
+    │   ├── _setup_toolbar_icons()               # Set up toolbar
+    │   ├── _connect_action() for each action    # Connect menu items
+    │   └── _connect_remaining_ui_elements()     # Connect other UI elements
+    ├── ui_helpers.setup_tree_widget()           # Set up signal tree
+    ├── ui_helpers.populate_soc_list()           # Populate SOC dropdown
+    ├── ui_helpers.populate_build_types()        # Populate build types
+    ├── populate_board_select()                  # Populate board selection
+    └── ui_helpers.initialize_version_fields()   # Initialize version fields
+	
+
+/********************************************************************************************************
+----------------------------------------------- File -> New ---------------------------------------------
+********************************************************************************************************/
+
+create_file_wrapper()
+  ├── ui_helpers.check_unsaved_changes()  # Confirm if there are unsaved changes
+  │   └── QMessageBox.question()  # Show confirmation dialog if modified=True
+  │
+  ├── file_ops.create_new_file()
+  │   ├── Create default signals_data structure
+  │   ├── Reset current_file to None
+  │   ├── Set modified=False
+  │   └── Call initialize_missing_ui_components()
+  │
+  ├── ui_helpers.update_window_title()  # Set window title to "untitled"
+  ├── ui_helpers.refresh_signal_tree()  # Clear signal tree display
+  ├── ui_helpers.update_signal_count_display()  # Reset count to 0
+  ├── ui_helpers.populate_soc_list()  # Reset SOC selection
+  ├── ui_helpers.populate_build_types()  # Reset build types
+  └── ui_helpers.initialize_version_fields()  # Set default version info
+ 
+/********************************************************************************************************
+---------------------------------------------- File -> Open ---------------------------------------------
+********************************************************************************************************/
+ 
+ Menu click on "Open" → actionOpen.triggered signal
+│
+├── open_file_wrapper() in SignalMgrApp.py
+│   ├── Initializes UI components if needed
+│   ├── Processes UI events via QApplication.processEvents()
+│   │
+│   ├── file_ops.open_file() in FileOperations.py
+│   │   ├── Checks for unsaved changes via ui_helpers.check_unsaved_changes()
+│   │   ├── Shows file dialog with QFileDialog.getOpenFileName()
+│   │   ├── Loads JSON file with json.load() 
+│   │   ├── Validates file structure
+│   │   ├── Updates signals_data structure
+│   │   ├── Sets current_file and modified=False
+│   │   ├── Updates window title via ui_helpers.update_window_title()
+│   │   └── Refreshes UI via ui_helpers.refresh_signal_tree()
+│   │
+│   └── initialize_project_specific_config()
+│       └── Sets up project configuration UI based on loaded data
+
+
+/********************************************************************************************************
+---------------------------------------------- File -> Close --------------------------------------------
+********************************************************************************************************/
+
+User clicks "File -> Close" → actionClose.triggered signal
+│
+└── file_ops.close_file() in FileOperations.py
+    ├── Check for unsaved changes (app.modified flag)
+    │   └── QMessageBox.question() - if app.modified is True
+    │       └── save_file() - if user chooses "Yes"
+    │
+    ├── ui_helpers._disconnect_ui_signals() - Disconnect UI signals to prevent crashes
+    │
+    ├── Reset application state:
+    │   ├── Set current_file = None
+    │   ├── Create default signals_data structure
+    │   │   └── Empty metadata with version, date, empty editor/description
+    │   ├── Copy clean state to original_signals_data for comparison
+    │   └── Set modified = False, using_default_values = True
+    │
+    ├── Clear UI elements (with processEvents() between each step):
+    │   ├── Clear EditorName and VersionDescription fields
+    │   ├── Initialize version fields with skip_validation=True
+    │   ├── Refresh signal tree to clear signal display
+    │   ├── Update signal count display to show 0
+    │   ├── Update core info display to clear core configuration
+    │   ├── Clear signal attribute section
+    │   └── Update window title to show "untitled"
+    │
+    └── Show success message: "File closed successfully"
+
+/********************************************************************************************************
+---------------------------------------------- File -> Save ---------------------------------------------
+********************************************************************************************************/
+
+User clicks "File -> Save" → actionSave.triggered signal
+│
+└── file_ops.save_file() in FileOperations.py
+    │
+    ├── ui_helpers.check_version_for_export()  # Validates version fields
+    │   └── Shows error dialog if validation fails
+    │
+    ├── Validate editor name
+    │   └── If empty: Show warning dialog and return
+    │
+    ├── ui_helpers.update_version_info(skip_validation=True)
+    │   └── Updates signals_data["metadata"] with latest values from UI
+    │
+    ├── Check if current_file exists
+    │   ├── If NO: call save_file_as() → shows file dialog → sets current_file
+    │   │   └── Then calls save_file() again with new file path
+    │   │
+    │   └── If YES: proceed with save
+    │       ├── Open current_file with write mode
+    │       ├── json.dump(signals_data, file, indent=4)
+    │       ├── Set app.modified = False  # No longer modified
+    │       ├── Set ui_helpers.using_default_values = False
+    │       ├── Create backup: ui_helpers.original_signals_data = deepcopy(signals_data)
+    │       ├── Update window title via ui_helpers.update_window_title()
+    │       └── Show success message dialog
+    │
+    └── Error handling: If save fails
+        └── Offer to save to different location
+		
+/********************************************************************************************************
+--------------------------------------------- File -> Save As -------------------------------------------
+********************************************************************************************************/
+
+User clicks "File -> Save As" → actionSave_As.triggered signal
+│
+└── file_ops.save_file_as() in FileOperations.py
+    │
+    ├── ui_helpers.check_version_for_export()  # Validates version fields
+    │   └── Returns False and shows error dialog if validation fails
+    │
+    ├── ui_helpers.update_version_info(skip_validation=True)
+    │   └── Updates signals_data["metadata"] with latest values from UI
+    │
+    ├── QFileDialog.getSaveFileName()  # Shows file dialog
+    │   └── User selects save location or cancels
+    │
+    ├── Set app.current_file = selected file path
+    │
+    └── file_ops.save_file()  # Call regular save with new path
+        ├── Open file in write mode
+        ├── json.dump(signals_data, file, indent=4)
+        ├── Set app.modified = False
+        ├── Set ui_helpers.using_default_values = False
+        ├── Create backup: ui_helpers.original_signals_data = deepcopy(signals_data)
+        ├── Update window title via ui_helpers.update_window_title()
+        └── Show success message dialog
+		
+/********************************************************************************************************
+------------------------------------------ File -> Export To Excel --------------------------------------
+********************************************************************************************************/
+
+User clicks "File -> Export To Excel" → actionExport_To_Excel.triggered signal
+│
+└── file_ops.export_to_excel() in FileOperations.py
+    │
+    ├── ui_helpers.check_version_for_export()  # Validates version fields
+    │   └── Returns False + shows error dialog if validation fails
+    │
+    ├── QFileDialog.getSaveFileName()  # Shows save dialog for Excel
+    │   └── User selects location or cancels
+    │
+    ├── Create pandas ExcelWriter with xlsxwriter engine
+    │   │
+    │   ├── export_version_data(writer, 'Version')
+    │   │   └── Creates DataFrame with metadata (version, date, editor, description)
+    │   │   └── Writes to Version sheet
+    │   │
+    │   ├── export_config_data(writer, 'Config')
+    │   │   └── Creates DataFrame with SOC/build type configuration
+    │   │   └── Creates DataFrame with core information
+    │   │   └── Writes to Config sheet with specific layout
+    │   │
+    │   └── export_signals_data(writer, 'LookUpTable')
+    │       └── Creates DataFrame with all signal data
+    │       └── Includes core destinations as Yes/No columns
+    │       └── Writes to LookUpTable sheet
+    │
+    └── Shows success message dialog
+	
+/********************************************************************************************************
+----------------------------------------- File -> Import From Excel -------------------------------------
+********************************************************************************************************/
+
+User clicks "File -> Import From Excel" → actionImport_From_Excel.triggered signal
+│
+└── file_ops.import_from_excel() in FileOperations.py
+    │
+    ├── Check for unsaved changes
+    │   └── QMessageBox.question() if app.modified=True
+    │       └── save_file() if user chooses "Yes"
+    │
+    ├── QFileDialog.getOpenFileName()  # Shows file open dialog for Excel
+    │
+    ├── read_excel_config(file_path)
+    │   ├── pd.ExcelFile(file_path)  # Get Excel sheet names
+    │   │
+    │   ├── Process "Version" sheet if exists
+    │   │   └── Extract metadata (version, date, editor, description)
+    │   │
+    │   ├── Process "Config" sheet if exists
+    │   │   ├── Extract SOC and build type configuration
+    │   │   └── Extract core information
+    │   │
+    │   └── Process "LookUpTable" sheet if exists
+    │       └── Extract signal definitions with properties
+    │
+    ├── Create temporary JSON file with imported data
+    │   └── json.dump(imported_data, temp_file)
+    │
+    ├── open_file(temp_json_path)  # Load the temporary file
+    │   └── Calls the regular file open process
+    │
+    ├── Update UI with imported metadata
+    │   ├── Set EditorName and VersionDescription fields
+    │   ├── Create backup with original_signals_data = deepcopy(signals_data)
+    │   └── Set app.modified = False
+    │
+    ├── Delete temporary JSON file
+    │
+    └── Show success message dialog
+	
+/********************************************************************************************************
+------------------------------------------------- File -> Exit ------------------------------------------
+********************************************************************************************************/
+
+User clicks "File -> Exit" → actionExit.triggered signal
+│
+└── file_ops.close_application() in FileOperations.py
+    │
+    ├── ui_helpers.check_unsaved_changes()
+    │   ├── Checks if app.modified is True
+    │   │   ├── If NO: Returns True (safe to exit)
+    │   │   │
+    │   │   └── If YES: Shows confirmation dialog
+    │   │       ├── If "Yes": Calls save_file()
+    │   │       │   └── See Save call stack above
+    │   │       ├── If "No": Returns True (discard changes)
+    │   │       └── If "Cancel": Returns False (abort exit)
+    │   │
+    │   └── Returns True/False based on user's choice
+    │
+    └── self.app.close()  # Close application window if check_unsaved_changes() returned True

@@ -1,0 +1,36 @@
+/********************************************************************************************************
+----------------------------------------------- Edit -> Add Entry ---------------------------------------
+********************************************************************************************************/
+
+User clicks "Edit -> Add Entry" → actionAddSignal.triggered signal
+│
+└── signal_ops.add_signal() in SignalOperations.py
+    │
+    ├── ui_helpers.save_undo_state()  # Save current state for undo functionality
+    │
+    ├── open_add_signal_dialog()  # Show add signal dialog
+    │   └── Creates and displays SignalDialog with empty fields
+    │       └── User fills in signal properties and clicks "OK"
+    │
+    ├── validate_signal_properties()  # Validate user input
+    │   ├── Check for duplicates
+    │   ├── Validate data types
+    │   └── Return validation results
+    │
+    ├── signals_data["signals"][signal_name] = signal_properties  # Add to data structure
+    │
+    ├── Set app.modified = True  # Mark as modified
+    │
+    ├── ui_helpers.update_window_title()  # Update title with asterisk
+    │
+    ├── ui_helpers.refresh_signal_tree()  # Update signal tree display
+    │   └── Repopulates QTableWidget with signals data
+    │
+    └── ui_helpers.update_signal_count_display()  # Update count indicator
+	
+	
+if EditorName is not there check for VersionUpdateName
+
+check if VersionUpdateName is there and use below method to show editor_name
+self.app.ui.VersionUpdateName.setPlaceholderText(editor_name)
+self.app.ui.VersionUpdateName.setPlainText("")  # Clear text to show placeholder

@@ -5,6 +5,8 @@ __pycache__/
 *.so
 *.pyd
 *.dll
+*.pyc
+*.bak
 
 # Distribution / packaging
 dist/
@@ -62,7 +64,6 @@ ehthumbs.db
 Thumbs.db
 
 # Project specific
-TestConfigSaved/
 *.log
 
 # Compiled executables
@@ -71,4 +72,5 @@ TestConfigSaved/
 *.app
 # But don't exclude the final built executable in dist directory
 !dist/SignalMgrGUI/SignalMgrGUI.exe
-!dist/SignalMgrGUI/*.exe 
+!dist/SignalMgrGUI/*.exe
+

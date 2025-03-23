@@ -1,0 +1,104 @@
+Project in short - Creating GUI tool to manage Database (Data Entries with attributes)
+Describtion -
+- GUI should be able to maintain information about
+    - SOC Name [Configurable]
+        - Core Names [Configurable]
+            - Core Details [ IsMasterCore, OS Type, SOC Family, IsAutosar, IsQnx, IsSimulation]
+                - OS Types should be automotive OS Types [QNX, Autosar, Freertos, safertos, Baremetal, Custom]
+                - SOC Family should be automotive supported SOC Families like [TI, Tricore, RassberryPi, Qualcomm, NVIDIA]
+    (Note - there could be one more than one SOC, each SOC can have one or many Cores)
+    - BUILD Image Type
+        - SMP (SingleImage)
+        - MultiImage
+    - Board Name [Configurable]
+        (There could be one or more than one board name)
+
+    (Note - Core Configuration (TabName))
+
+- GUI Should be able to maintain / Configure
+    - API Configuration
+        (this will be synched with Core Configuration and BuildImageType or Build_image_combo)
+        if Build Image Type is SMP then
+            - SpinLock/Unlock API with HeaderFileName
+            - SemaphoreLock/Unlock API with HeaderFileName
+            - GetCoreId API with HeaderFileName
+            (Single Core)
+        else
+            - SpinLock/Unlock API with HeaderFileName
+            - SemaphoreLock/Unlock API with HeaderFileName
+            (This section will be Configurable For Each Core)
+
+    - Script Path & OutPut Path
+    (Note - Project Specific Data (TabName))
+
+- GUI Should maintain Database of Signals as below
+    - SignalName (DataType)
+        - Each DataType or SignalName will have below Configurable attributes
+            "Variable_Port_Name" - Text Input
+            "description" - Text Input
+            "Memory Region" - ListMenu - [DDR/Cache/NonCache]
+            "Type" - ListMenu - [Concurrent/Sequential]
+            "InitValue" - ListMenu - [ZeroValue/Custom]
+            "ASIL"  - ListMenu - [QM/A/B/C/D]
+            "Buffer count_IPC" - 1-10
+            "Impl_Approach"     - ListMenu - [SharedMemory/VRING/IpcOvEth]
+            "GetCoreId"         - ListMenu - [True / False]
+            "Notifiers"         - ListMenu - [True / False]
+            "SM_Buff_Count"     - 1-10
+            "Timeout"           - 10-200ms
+            "Periodicity"       - 10-200ms
+            "Checksum"          - ListMenu - [Additive/Custom/None]
+            "Source"            - Source Core Name (Synched with Above Configured Data in Core Configuration)
+            List of Cores with CheckBox - If Core is getting that data then will mark as Receiver core (this also synched with Core Configuration)
+
+    - This Should Support Add / Delete / Update Menu
+        - in Add Action -
+            - user need to Configure DataType (Struct/Union/Normal Automotive DataType/ Array)
+            - As user to have name for created data Type
+            - Then prompt user to fill or select Configurable attributes
+        - in Delete
+            - Just Delete the selected Entries
+        - In Update
+            - Allow user to change all attributes along with DataType itself
+    - There Should also be ListOfSOC ListOfBoard ListOfBinaryImageType (all synched with Core Configuration Tab)
+        - for Code Generation we will be require this inputs like which SOC which Image which Board etc
+
+    (Note - Signal Database (TabName))
+
+- GUI Should be have action Menu like "Code Generator" -> SignalMgr/Ipc  (Menu List)
+    - For SignalMgr
+        - GUI should be able to invoke "main.py -i SigM" from Script Path (Configured  in Project Specific Data Tab)
+    - For Ipc
+        - GUI should be able to invoke "main.py -i Ipc" from Script Path (Configured  in Project Specific Data Tab)
+
+- GUI Should be supported or able to manager tracing of FileChanges/Local Changes/Initial UI Look
+    - Use any best method
+    (i would suggest in aditional keep Two Copies of Data store in Files.)
+        - One if OrgFile - Updated on File -> Open or File -> Save or File -> Save As or File -> Import
+        - Whenever any Signals related action performed i.e Add/Delete/Update
+            - Create New TempFile -> Append all data OrgFile Data + Action performed
+        - Whenever Save or Save as action get performed GUI should be able to update both file as same.
+            - Before that just compare OrgFile and TempFile is same or not or is there any OrgFile (that means any file is opened or not) or TempFile (Any Local Action performed on OrgFile)
+
+- GUI Should be able to manage UI Data correctly.
+    - Whenever File opened or data added or deletected or imported Data should be loaded to its respective object.
+    - Whenever Close action get performed UI should be updated to InitialView (as we have in initial App launch time)
+
+
+Hi can you find Prompt in attached File (TestDataPromp.txt)
+
+I have added all layout related files. (.UI)
+
+i have added resource file for icon reference (don't worry about icon files i have it locally)
+
+Can you help me to create GUI tool using QT + Python
+
+(note - Application Must be Fast Enough and Smoothly working, as this app is going to use large data sets)
+
+
+- Maintain Project standard structure as
+    - Configuration file should go to Config folder
+    - Resource file should go to resouce folder
+    - Modules should go to Modules Folders
+    - Test Data should go to TestExample folder
+- Create Modular Scripts, for each action create modular scripts like FileOperartion.py UIHelper.py etc
